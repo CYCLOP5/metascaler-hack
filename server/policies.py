@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pulp
 
-from .env import DSCEnv, HORIZON
+from .dsc_environment import DSCEnv, HORIZON
 from .solver import EdgeSpec, Scenario
 
 

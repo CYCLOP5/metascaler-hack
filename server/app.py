@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
-from .env import DSCEnv
-from .models import DSCActionEnvelope, DSCObservation
+try:
+    from .dsc_environment import DSCEnv
+    from .models import DSCActionEnvelope, DSCObservation
+except ImportError:
+    from server.dsc_environment import DSCEnv
+    from server.models import DSCActionEnvelope, DSCObservation
 
 
 class ResetRequest(BaseModel):
@@ -14,10 +19,22 @@ class ResetRequest(BaseModel):
 
 
 def _build_app():
+    max_concurrent = int(os.getenv("MAX_CONCURRENT_ENVS", "8"))
     try:
-        from openenv.core.env_server import create_app as _oe_create_app
+        try:
+            from openenv.core.env_server.http_server import create_app as _oe_create_app
+        except Exception:
+            from openenv.core.env_server import create_app as _oe_create_app
+        from openenv.core.env_server.mcp_types import CallToolAction, CallToolObservation
+
         print("init oe app")
-        return _oe_create_app(DSCEnv, DSCActionEnvelope, DSCObservation, env_name="dsc_co")
+        return _oe_create_app(
+            DSCEnv,
+            CallToolAction,
+            CallToolObservation,
+            env_name="dsc_co",
+            max_concurrent_envs=max_concurrent,
+        )
     except Exception:
         print("init fa app")
         from fastapi import FastAPI, HTTPException
@@ -85,3 +102,14 @@ def _build_app():
 
 
 app = _build_app()
+
+
+def main():
+    import uvicorn
+
+    port = int(os.getenv("PORT", os.getenv("APP_PORT", "8000")))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+
+if __name__ == "__main__":
+    main()

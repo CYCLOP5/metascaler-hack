@@ -1,6 +1,6 @@
 import pytest
 
-from src.env import DSCEnv, HORIZON, DENSE_CAP, MAX_CALLS_PER_CYCLE
+from server.dsc_environment import DSCEnv, HORIZON, DENSE_CAP, MAX_CALLS_PER_CYCLE
 
 
 @pytest.fixture

@@ -1,31 +1,6 @@
+spec_version: 1
 name: dsc_co
-title: openenv-dsc-co
-description: dynamic supply chain combinatorial orchestration, 30-step rlvr env
-version: 0.1.0
-author: openenv-dsc-co
-module: src.server
-app: app
-entrypoint: src.server:app
-port: 7860
-tags:
-  - rlvr
-  - rlve
-  - supply-chain
-  - long-horizon
-  - mcp
-  - milp
-  - grpo
-action:
-  module: src.models
-  class: DSCActionEnvelope
-observation:
-  module: src.models
-  class: DSCObservation
-mcp:
-  tools:
-    - name: query_network
-      description: edge lead time, capacity, unit cost
-    - name: dispatch_inventory
-      description: batch ship orders with strict int qty
-    - name: advance_cycle
-      description: tick time, process arrivals, deduct demand
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000

@@ -5,118 +5,103 @@ import json
 import sys
 from typing import Any, Dict, List, Optional
 
-import requests
 
-
-class DSCClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:7860", timeout: int = 30):
-        self.base = base_url.rstrip("/")
-        self.timeout = timeout
-
-    def health(self) -> Dict[str, Any]:
-        r = requests.get(f"{self.base}/health", timeout=self.timeout)
-        r.raise_for_status()
-        return r.json()
-
-    def reset(self, seed: Optional[int] = None, difficulty: int = 1) -> Dict[str, Any]:
-        payload = {"seed": seed, "difficulty": difficulty}
-        r = requests.post(f"{self.base}/reset", json=payload, timeout=self.timeout)
-        r.raise_for_status()
-        return r.json()
-
-    def step(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r = requests.post(f"{self.base}/step", json={"action": action}, timeout=self.timeout)
-        r.raise_for_status()
-        return r.json()
-
-    def query(self, src: str, dst: str) -> Dict[str, Any]:
-        return self.step({"kind": "query_network", "source_id": src, "dest_id": dst})
-
-    def dispatch(self, routes: List[Dict[str, Any]]) -> Dict[str, Any]:
-        return self.step({"kind": "dispatch_inventory", "routes": routes})
-
-    def advance(self) -> Dict[str, Any]:
-        return self.step({"kind": "advance_cycle"})
-
-    def mcp_tools(self) -> Dict[str, Any]:
-        payload = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
-        r = requests.post(f"{self.base}/mcp", json=payload, timeout=self.timeout)
-        r.raise_for_status()
-        return r.json()
-
-    def mcp_call(self, name: str, args: Dict[str, Any]) -> Dict[str, Any]:
-        payload = {
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/call",
-            "params": {"name": name, "arguments": args},
-        }
-        r = requests.post(f"{self.base}/mcp", json=payload, timeout=self.timeout)
-        r.raise_for_status()
-        return r.json()
-
-
-def _pretty(o: Dict[str, Any], compact: bool = False) -> str:
+def _pretty(o: Any, compact: bool = False) -> str:
     if compact:
-        return json.dumps(o, separators=(",", ":"))
-    return json.dumps(o, indent=2)
+        return json.dumps(o, separators=(",", ":"), default=str)
+    return json.dumps(o, indent=2, default=str)
+
+
+def _try_mcp_client(url: str):
+    try:
+        from openenv.core.mcp_client import MCPToolClient
+
+        return MCPToolClient(base_url=url).sync()
+    except Exception as e:
+        print(f"err mcp init: {e}", file=sys.stderr)
+        sys.exit(2)
+
+
+def cmd_health(url: str) -> None:
+    import requests
+
+    r = requests.get(f"{url.rstrip('/')}/health", timeout=10)
+    print(_pretty(r.json()))
+
+
+def cmd_tools(url: str) -> None:
+    with _try_mcp_client(url) as env:
+        env.reset()
+        tools = env.list_tools()
+        print(_pretty([{"name": t.name, "schema": getattr(t, "input_schema", None) or getattr(t, "inputSchema", None)} for t in tools]))
+
+
+def cmd_loop(url: str, tier: int, seed: int) -> None:
+    with _try_mcp_client(url) as env:
+        env.reset(difficulty=tier, seed=seed)
+        for t in range(30):
+            res = env.call_tool("advance_cycle")
+            print(f"step {t} result:", _pretty(res, compact=True))
+            meta = res if isinstance(res, dict) else {}
+            if meta.get("done"):
+                break
+
+
+def cmd_query(url: str, src: str, dst: str) -> None:
+    with _try_mcp_client(url) as env:
+        env.reset()
+        print(_pretty(env.call_tool("query_network", source_id=src, dest_id=dst)))
+
+
+def cmd_dispatch(url: str, src: str, dst: str, qty: int, tier: int, seed: int) -> None:
+    with _try_mcp_client(url) as env:
+        env.reset(difficulty=tier, seed=seed)
+        print(_pretty(env.call_tool("dispatch_inventory", routes=[{"src": src, "dst": dst, "qty": qty}])))
+
+
+def cmd_probe(url: str) -> None:
+    import requests
+
+    base = url.rstrip("/")
+    r = requests.post(f"{base}/reset", json={"seed": 7, "difficulty": 1}, timeout=15)
+    print("probe /reset:", r.status_code, _pretty(r.json(), compact=True)[:200])
+    r = requests.post(f"{base}/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, timeout=15)
+    print("probe /mcp list:", r.status_code, _pretty(r.json(), compact=True)[:300])
 
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--url", default="http://127.0.0.1:7860")
+    p.add_argument("--url", default="http://127.0.0.1:8000")
     sub = p.add_subparsers(dest="cmd", required=True)
-
     sub.add_parser("health")
-    pr = sub.add_parser("reset")
-    pr.add_argument("--seed", type=int, default=0)
-    pr.add_argument("--tier", type=int, default=1)
-
+    sub.add_parser("tools")
+    sub.add_parser("probe")
+    pl = sub.add_parser("loop")
+    pl.add_argument("--tier", type=int, default=1)
+    pl.add_argument("--seed", type=int, default=0)
     pq = sub.add_parser("query")
     pq.add_argument("src")
     pq.add_argument("dst")
-
     pd = sub.add_parser("dispatch")
     pd.add_argument("src")
     pd.add_argument("dst")
     pd.add_argument("qty", type=int)
-
-    sub.add_parser("advance")
-    sub.add_parser("tools")
-
-    pmc = sub.add_parser("call")
-    pmc.add_argument("name")
-    pmc.add_argument("--args", default="{}")
-
-    pl = sub.add_parser("loop")
-    pl.add_argument("--seed", type=int, default=0)
-    pl.add_argument("--tier", type=int, default=1)
+    pd.add_argument("--tier", type=int, default=1)
+    pd.add_argument("--seed", type=int, default=0)
 
     a = p.parse_args()
-    c = DSCClient(a.url)
-
     if a.cmd == "health":
-        print(_pretty(c.health()))
-    elif a.cmd == "reset":
-        print(_pretty(c.reset(seed=a.seed, difficulty=a.tier)))
-    elif a.cmd == "query":
-        print(_pretty(c.query(a.src, a.dst)))
-    elif a.cmd == "dispatch":
-        print(_pretty(c.dispatch([{"src": a.src, "dst": a.dst, "qty": a.qty}])))
-    elif a.cmd == "advance":
-        print(_pretty(c.advance()))
+        cmd_health(a.url)
     elif a.cmd == "tools":
-        print(_pretty(c.mcp_tools()))
-    elif a.cmd == "call":
-        print(_pretty(c.mcp_call(a.name, json.loads(a.args))))
+        cmd_tools(a.url)
+    elif a.cmd == "probe":
+        cmd_probe(a.url)
     elif a.cmd == "loop":
-        obs = c.reset(seed=a.seed, difficulty=a.tier)
-        print("reset", _pretty({"step": obs["step"], "nodes": len(obs["nodes"])}))
-        for t in range(30):
-            out = c.advance()
-            if out.get("done"):
-                print(f"done step={out['step']} reward={out['reward']} term={out['metadata'].get('terminal')}")
-                break
+        cmd_loop(a.url, a.tier, a.seed)
+    elif a.cmd == "query":
+        cmd_query(a.url, a.src, a.dst)
+    elif a.cmd == "dispatch":
+        cmd_dispatch(a.url, a.src, a.dst, a.qty, a.tier, a.seed)
     return 0
 
 

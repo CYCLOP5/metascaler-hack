@@ -2,8 +2,8 @@ import random
 
 import pytest
 
-from src.env import _build_tier
-from src.solver import EdgeSpec, NodeSpec, Scenario, greedy_cost, optimal_cost
+from server.dsc_environment import _build_tier
+from server.solver import EdgeSpec, NodeSpec, Scenario, greedy_cost, optimal_cost
 
 
 def _trivial_scenario(h: int = 5) -> Scenario:

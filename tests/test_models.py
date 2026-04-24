@@ -1,8 +1,8 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models import (
-    DSCActionEnvelope,
+from server.models import (
+    DSCAction,
     DSCObservation,
     DispatchOrder,
     Node,
@@ -37,44 +37,33 @@ class TestDispatchOrderValidation:
 
 class TestActionEnvelope:
     def test_query_parses(self):
-        e = DSCActionEnvelope.model_validate(
-            {"action": {"kind": "query_network", "source_id": "S0", "dest_id": "W0"}}
-        )
-        assert e.action.kind == "query_network"
-        assert e.action.source_id == "S0"
+        a = DSCAction.model_validate({"kind": "query_network", "source_id": "S0", "dest_id": "W0"})
+        assert a.root.kind == "query_network"
+        assert a.root.source_id == "S0"
 
     def test_dispatch_parses(self):
-        e = DSCActionEnvelope.model_validate(
-            {
-                "action": {
-                    "kind": "dispatch_inventory",
-                    "routes": [{"src": "S0", "dst": "W0", "qty": 3}],
-                }
-            }
+        a = DSCAction.model_validate(
+            {"kind": "dispatch_inventory", "routes": [{"src": "S0", "dst": "W0", "qty": 3}]}
         )
-        assert len(e.action.routes) == 1
-        assert e.action.routes[0].qty == 3
+        assert len(a.root.routes) == 1
+        assert a.root.routes[0].qty == 3
 
     def test_advance_parses(self):
-        e = DSCActionEnvelope.model_validate({"action": {"kind": "advance_cycle"}})
-        assert e.action.kind == "advance_cycle"
+        a = DSCAction.model_validate({"kind": "advance_cycle"})
+        assert a.root.kind == "advance_cycle"
 
     def test_unknown_kind_rejected(self):
         with pytest.raises(ValidationError):
-            DSCActionEnvelope.model_validate({"action": {"kind": "hack_world"}})
+            DSCAction.model_validate({"kind": "hack_world"})
 
     def test_empty_routes_rejected(self):
         with pytest.raises(ValidationError):
-            DSCActionEnvelope.model_validate(
-                {"action": {"kind": "dispatch_inventory", "routes": []}}
-            )
+            DSCAction.model_validate({"kind": "dispatch_inventory", "routes": []})
 
     def test_too_many_routes_rejected(self):
         routes = [{"src": "S0", "dst": "W0", "qty": 1}] * 9
         with pytest.raises(ValidationError):
-            DSCActionEnvelope.model_validate(
-                {"action": {"kind": "dispatch_inventory", "routes": routes}}
-            )
+            DSCAction.model_validate({"kind": "dispatch_inventory", "routes": routes})
 
 
 class TestObservation:

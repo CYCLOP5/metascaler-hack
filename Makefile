@@ -27,7 +27,7 @@ install-train:
 	$(PY) -m pip install -r requirements-train.txt
 
 serve:
-	$(PY) -m uvicorn src.server:app --host 0.0.0.0 --port $(PORT) --reload
+	$(PY) -m uvicorn server.app:app --host 0.0.0.0 --port $(PORT) --reload
 
 test:
 	$(PY) -m pytest tests/ -q
@@ -41,7 +41,7 @@ viz:
 	$(PY) viz.py terminal --eval eval.json --out assets/terminal_bars.png
 
 bench:
-	$(PY) -c "from src.env import _build_tier; from src.solver import optimal_cost, greedy_cost; import random, time; \
+	$(PY) -c "from server.dsc_environment import _build_tier; from server.solver import optimal_cost, greedy_cost; import random; \
 	[print(f'tier {t}: greedy={greedy_cost(_build_tier(t, random.Random(7))):.1f}  optimal={optimal_cost(_build_tier(t, random.Random(7)), time_limit=20):.1f}') for t in [1,2,3]]"
 
 docker:

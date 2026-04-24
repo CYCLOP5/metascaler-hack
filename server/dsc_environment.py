@@ -9,6 +9,7 @@ from uuid import uuid4
 try:
     from openenv.core.env_server.mcp_environment import MCPEnvironment as _BaseEnv
     from openenv.core.env_server.types import State as _State
+    from openenv.core.env_server.mcp_types import CallToolAction, ListToolsAction
     _OPENENV_OK = True
 except Exception:
     _OPENENV_OK = False
@@ -21,6 +22,12 @@ except Exception:
     class _BaseEnv:
         def __init__(self, mcp: Any = None):
             self._mcp = mcp
+
+    class CallToolAction:
+        pass
+
+    class ListToolsAction:
+        pass
 
 try:
     from fastmcp import FastMCP
@@ -42,6 +49,7 @@ from pydantic import ValidationError
 from .models import (
     DispatchInventory,
     DispatchOrder,
+    DSCAction,
     DSCActionEnvelope,
     DSCObservation,
     Node,
@@ -192,6 +200,8 @@ def _build_tier(difficulty: int, rng: random.Random) -> Scenario:
 
 
 class DSCEnv(_BaseEnv):
+    SUPPORTS_CONCURRENT_SESSIONS = True
+
     def __init__(self):
         mcp = FastMCP("dsc_co")
 
@@ -233,6 +243,15 @@ class DSCEnv(_BaseEnv):
     def state(self) -> _State:
         return self._state
 
+    def _step_impl(self, action: Any, timeout_s: Optional[float] = None, **kwargs: Any):
+        return self.step(action)
+
+    async def step_async(self, action: Any, timeout_s: Optional[float] = None, **kwargs: Any):
+        if _OPENENV_OK and isinstance(action, (ListToolsAction, CallToolAction)):
+            self._state.step_count += 1
+            return await super().step_async(action, timeout_s=timeout_s, **kwargs)
+        return self.step(action, timeout_s=timeout_s, **kwargs)
+
     def reset(self, seed: Optional[int] = None, difficulty: int = 1, **kwargs: Any) -> DSCObservation:
         print("reset tier")
         self._difficulty = max(1, min(4, int(difficulty)))
@@ -264,11 +283,23 @@ class DSCEnv(_BaseEnv):
         self._last_metadata = {"tier": self._difficulty, "agent_cost": 0.0}
         return self._observation(reward=0.0, done=False)
 
-    def step(self, action: Any) -> DSCObservation:
-        raw = action if isinstance(action, dict) else getattr(action, "__dict__", action)
-        inner = raw.get("action") if isinstance(raw, dict) and "action" in raw else raw
-        if isinstance(inner, dict) and inner.get("kind") == "dispatch_inventory":
-            for r in inner.get("routes", []) or []:
+    def step(self, action: Any, timeout_s: Optional[float] = None, **kwargs: Any) -> Any:
+        if _OPENENV_OK and isinstance(action, (ListToolsAction, CallToolAction)):
+            self._state.step_count += 1
+            return super().step(action, timeout_s=timeout_s, **kwargs)
+
+        if isinstance(action, DSCAction):
+            inner_dict = action.root.model_dump()
+        elif isinstance(action, dict):
+            inner_dict = action.get("action", action) if "action" in action else action
+        elif hasattr(action, "model_dump"):
+            dumped = action.model_dump()
+            inner_dict = dumped.get("action", dumped) if isinstance(dumped, dict) and "action" in dumped else dumped
+        else:
+            inner_dict = getattr(action, "__dict__", {})
+
+        if isinstance(inner_dict, dict) and inner_dict.get("kind") == "dispatch_inventory":
+            for r in inner_dict.get("routes", []) or []:
                 q = r.get("qty") if isinstance(r, dict) else None
                 if _is_underflow_qty(q):
                     print("term neg")
@@ -277,20 +308,18 @@ class DSCEnv(_BaseEnv):
                     return self._observation(reward=NEG_PENALTY, done=True)
 
         try:
-            if isinstance(action, DSCActionEnvelope):
-                env = action
-            else:
-                env = DSCActionEnvelope.model_validate(raw)
+            parsed = DSCAction.model_validate(inner_dict)
         except ValidationError:
             print("err schema")
             return self._observation(reward=0.0, done=self._done)
 
-        kind = env.action.kind
+        act = parsed.root
+        kind = act.kind
         shaping = self._credit_schema()
         if kind == "query_network":
-            self._handle_query(env.action.source_id, env.action.dest_id)
+            self._handle_query(act.source_id, act.dest_id)
         elif kind == "dispatch_inventory":
-            routes_payload = [r.model_dump() for r in env.action.routes]
+            routes_payload = [r.model_dump() for r in act.routes]
             res = self._handle_dispatch(routes_payload)
             if res.get("ok"):
                 shaping += self._credit_valid()

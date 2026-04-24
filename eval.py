@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from src.policies import greedy_rollout, optimal_replay_rollout, zero_op_rollout
+from server.policies import greedy_rollout, optimal_replay_rollout, zero_op_rollout
 
 
 POLICIES = {

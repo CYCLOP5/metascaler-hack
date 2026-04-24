@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-dsc-co"
+version = "0.1.0"
+description = "dynamic supply chain combinatorial orchestration: 30-step rlvr env verified by pulp cbc milp oracle"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "openenv-dsc-co" }]
+keywords = ["openenv", "rlvr", "rlve", "grpo", "supply-chain", "long-horizon", "milp", "mcp"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "openenv-core[core]>=0.2.3",
+    "fastapi>=0.115.0",
+    "pydantic>=2.9.0",
+    "uvicorn>=0.24.0",
+    "requests>=2.31.0",
+    "fastmcp>=3.0.0",
+    "pulp>=2.9.0",
+    "gymnasium>=1.0.0",
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+viz = [
+    "matplotlib>=3.8",
+]
+train = [
+    "torch>=2.5",
+    "transformers>=4.46",
+    "accelerate>=1.0",
+    "peft>=0.13",
+    "datasets>=3.0",
+    "bitsandbytes>=0.44",
+    "trl>=0.29",
+    "unsloth",
+    "unsloth_zoo",
+    "trackio",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[project.urls]
+Homepage = "https://github.com/cyclop5/metascaler-hack"
+Repository = "https://github.com/cyclop5/metascaler-hack"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["server"]

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Annotated, Any, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, conint, conlist, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, conint, conlist, model_validator
 
 
 NodeType = Literal["supplier", "warehouse", "retail"]
@@ -75,12 +75,17 @@ class AdvanceCycle(BaseModel):
     kind: Literal["advance_cycle"] = "advance_cycle"
 
 
-DSCAction = Union[QueryNetwork, DispatchInventory, AdvanceCycle]
+_DSCActionUnion = Annotated[
+    Union[QueryNetwork, DispatchInventory, AdvanceCycle],
+    Field(discriminator="kind"),
+]
 
 
-class DSCActionEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    action: DSCAction = Field(..., discriminator="kind")
+class DSCAction(RootModel[_DSCActionUnion]):
+    pass
+
+
+DSCActionEnvelope = DSCAction
 
 
 class EdgeInfo(BaseModel):

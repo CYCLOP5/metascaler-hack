@@ -42,7 +42,7 @@ def _obs_to_str(obs: Any) -> str:
 
 class DSCToolEnv:
     def __init__(self):
-        from src.env import DSCEnv
+        from server.dsc_environment import DSCEnv
 
         self._env = DSCEnv()
         self.reward = 0.0

@@ -15,14 +15,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
+COPY pyproject.toml requirements.txt /app/
 RUN pip install --upgrade pip && pip install -r /app/requirements.txt
+
+COPY . /app
 
 RUN useradd --create-home --uid 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-COPY . /app
-
+ENV PORT=7860
 EXPOSE 7860
 
-CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
