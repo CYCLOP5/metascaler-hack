@@ -49,7 +49,7 @@ docker:
 
 push-space:
 	@[ -n "$(REPO)" ] || (echo "set REPO=user/env-name"; exit 1)
-	openenv push -r $(REPO)
+	openenv push -r $(REPO) --exclude .openenvignore
 
 train:
 	$(PY) train.py

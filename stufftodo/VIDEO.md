@@ -70,7 +70,7 @@ target: < 120 seconds. 16:9. 30fps. voiceover + screen capture.
 
 **voiceover**: "openenv-dsc-co. go clone it."
 
-**caption**: `github.com/<you>/openenv-dsc-co`
+**caption**: `github.com/CYCLOP5/metascaler-hack  /  hf.co/spaces/AceofStades/dsc_co`
 
 ---
 

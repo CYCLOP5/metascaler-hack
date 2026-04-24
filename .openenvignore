@@ -1,0 +1,13 @@
+env/
+venv/
+.venv/
+.venv_*/
+env_*/
+node_modules/
+*.egg-info/
+grpo_dsc_co/
+*.log
+*.mp4
+*.mov
+*.zip
+.DS_Store

@@ -23,7 +23,19 @@ short_description: 30-step supply chain rlvr env with pulp milp oracle
 
 # openenv-dsc-co
 
-dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/rlve environment. a 30-step multi-echelon supply chain graph verified by a deterministic pulp/cbc mixed-integer linear programming oracle. 100% api/json driven. single unprivileged docker container. hf space on port 7860.
+dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/rlve environment. a 30-step multi-echelon supply chain graph verified by a deterministic pulp/cbc mixed-integer linear programming oracle. 100% api/json driven. single unprivileged docker container. hf space.
+
+## links
+
+| artifact | url |
+|---|---|
+| live hf space (env server) | https://huggingface.co/spaces/AceofStades/dsc_co |
+| kaggle training notebook | https://www.kaggle.com/code/cycl0p5/metahack |
+| github source | https://github.com/CYCLOP5/metascaler-hack |
+| trained lora adapter | https://huggingface.co/AceofStades/dsc-co-grpo-lora (after kaggle run) |
+| trackio live training dashboard | https://huggingface.co/spaces/AceofStades/dsc-co-trackio (auto-created on first run) |
+| blog post | [BLOG.md](BLOG.md) |
+| 2-minute demo script | [stufftodo/VIDEO.md](stufftodo/VIDEO.md) |
 
 ## tl;dr
 
@@ -72,14 +84,18 @@ python client.py tools
 
 ## hf space deployment
 
-this repo is already hf-space-ready. from the repo root:
+live hf space: https://huggingface.co/spaces/AceofStades/dsc_co
+
+reproduce the deploy:
 
 ```
 huggingface-cli login
-openenv push -r <your-hf-user>/dsc_co
+openenv push -r AceofStades/dsc_co --exclude .openenvignore
 ```
 
-`-r` (aka `--repo-id`) takes `username/env-name`. optional flags: `--private`, `--base-image ghcr.io/meta-pytorch/openenv-base:latest`, `--hardware cpu-basic`, `--env-var KEY=VAL`, `--secret KEY=VAL`.
+`-r` (aka `--repo-id`) takes `username/env-name`. `--exclude .openenvignore` is **required** — the cli's default ignore is only `.*`, `__pycache__`, `*.pyc`, so your local `env/` venv would otherwise upload (~400 mb of compiled `.so` + cbc binaries = 500 error from hf).
+
+optional flags: `--private`, `--base-image ghcr.io/meta-pytorch/openenv-base:latest`, `--hardware cpu-basic`, `--env-var KEY=VAL`, `--secret KEY=VAL`.
 
 manual docker alternative:
 
@@ -90,17 +106,44 @@ docker run --rm -p 7860:7860 openenv-dsc-co
 
 the hf space uses port 8000 by default (`openenv.yaml`). the root `Dockerfile` is wired for port 7860 if you deploy directly as a plain docker space.
 
-## training on kaggle (mac users)
+## training on kaggle
 
-**mac / apple silicon cannot build xformers** (clang rejects `-fopenmp`). run the env locally, but run grpo training on kaggle t4x2 or p100. open `notebooks/train_kaggle.ipynb` in kaggle, enable internet + gpu, and set the `DSC_HF_SPACE` env var to your space to clone the repo in-notebook.
+live kaggle notebook: https://www.kaggle.com/code/cycl0p5/metahack
+
+**mac / apple silicon cannot build xformers** (clang rejects `-fopenmp`). the env server runs fine on mac via pip, but grpo needs a cuda linux host. use kaggle t4x2 or p100.
+
+workflow:
+1. open `notebooks/train_kaggle.ipynb` on kaggle (or use the hosted link above)
+2. `settings` → accelerator = `t4 x2` (or `p100`), internet = `on`
+3. add two secrets under `add-ons → secrets`:
+   - `HF_TOKEN` — a write-scope token from https://huggingface.co/settings/tokens
+   - `DSC_HF_REPO` — `AceofStades/dsc-co-grpo-lora` (the repo the trained lora will be pushed to)
+4. optional: also set `DSC_HF_SPACE=AceofStades/dsc_co` so the notebook clones the live env repo instead of github
+5. `run all`. the notebook:
+   - installs unsloth + trl + vllm + pulp
+   - runs baseline rollouts (zero-op, greedy, milp-replay) to produce a pre-training gap curve
+   - loads qwen2.5-coder-7b 4-bit, trains with grpo for `MAX_STEPS=120` steps by default (~1-2h on t4x2)
+   - saves the lora adapter to `/kaggle/working/grpo_dsc_co/final` and uploads to `DSC_HF_REPO`
+   - runs trained-policy rollouts for the post-training gap
 
 training stack:
 - `unsloth/Qwen2.5-Coder-7B-Instruct` 4-bit qlora, r=32
 - `num_generations=8`, `max_completion_length=4096`, `beta=0.04`, `loss_type=bnpo`
 - `use_vllm=True`, `vllm_mode=colocate`
-- trackio hook logs mean cumulative + terminal + per-step rewards live
+- `trackio.log({...})` streams `reward/mean_cumulative`, `reward/mean_step`, `reward/mean_terminal` every grpo step to a public hf space that auto-creates on first call (or set `DSC_TRACKIO_SPACE=AceofStades/dsc-co-trackio`)
 
 fall back to `unsloth/Qwen2.5-Coder-3B-Instruct` if t4 vram is tight.
+
+reload the trained adapter anywhere with:
+
+```python
+from unsloth import FastLanguageModel
+model, tok = FastLanguageModel.from_pretrained(
+    "AceofStades/dsc-co-grpo-lora",
+    max_seq_length=8192, load_in_4bit=True, fast_inference=True,
+)
+FastLanguageModel.for_inference(model)
+```
 
 ## repo layout
 

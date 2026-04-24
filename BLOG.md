@@ -91,11 +91,12 @@ an llm planner starts at a 400% optimality gap because it thinks locally. the en
 
 ## links
 
-- hf space: `https://huggingface.co/spaces/<you>/openenv-dsc-co`
-- trained adapter: `https://huggingface.co/<you>/dsc-co-grpo-lora`
-- trackio dashboard: `https://huggingface.co/spaces/<you>/dsc-co-trackio`
-- github mirror: `https://github.com/<you>/openenv-dsc-co`
-- 2-minute demo video: `https://youtu.be/<id>`
+- hf space (env server): https://huggingface.co/spaces/AceofStades/dsc_co
+- kaggle training notebook: https://www.kaggle.com/code/cycl0p5/metahack
+- github: https://github.com/CYCLOP5/metascaler-hack
+- trained lora adapter: https://huggingface.co/AceofStades/dsc-co-grpo-lora   (published after the kaggle run)
+- trackio dashboard: https://huggingface.co/spaces/AceofStades/dsc-co-trackio   (auto-created on first `trackio.init`)
+- 2-minute demo video: https://youtu.be/TBD
 
 ## thanks
 
