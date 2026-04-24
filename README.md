@@ -72,18 +72,23 @@ python client.py tools
 
 ## hf space deployment
 
-this repo is already hf-space-ready. push from the repo root:
+this repo is already hf-space-ready. from the repo root:
 
 ```
-openenv push --namespace <your-hf-user>
+huggingface-cli login
+openenv push -r <your-hf-user>/dsc_co
 ```
 
-or manually:
+`-r` (aka `--repo-id`) takes `username/env-name`. optional flags: `--private`, `--base-image ghcr.io/meta-pytorch/openenv-base:latest`, `--hardware cpu-basic`, `--env-var KEY=VAL`, `--secret KEY=VAL`.
+
+manual docker alternative:
 
 ```
 docker build -t openenv-dsc-co .
 docker run --rm -p 7860:7860 openenv-dsc-co
 ```
+
+the hf space uses port 8000 by default (`openenv.yaml`). the root `Dockerfile` is wired for port 7860 if you deploy directly as a plain docker space.
 
 ## training on kaggle (mac users)
 
@@ -99,36 +104,48 @@ fall back to `unsloth/Qwen2.5-Coder-3B-Instruct` if t4 vram is tight.
 
 ## repo layout
 
+canonical openenv multi-mode deployment layout:
+
 ```
-src/
-  models.py       pydantic schemas (strict int qty, tagged-union action)
-  solver.py       pulp time-expanded min-cost flow + greedy baseline
-  env.py          dsc state machine, 4-tier curriculum, 3 mcp tools, reward rubric
-  policies.py     zero_op, greedy, optimal_replay baseline rollouts
-  server.py       fastapi + openenv create_app with manual fallback
-tests/
-  test_models.py  strict-int, envelope parsing, observation schema
-  test_env.py     reset shapes, anti-hack gates, valid flow, horizon termination
-  test_solver.py  milp correctness, tier shapes, bipartite edges
-notebooks/
-  train_kaggle.ipynb    end-to-end grpo run (kaggle)
-  demo.ipynb            before/after rollout plots
-docs/
-  architecture.md
-  reward-spec.md
-  milp-formulation.md
-  curriculum.md
-  anti-hacking.md
-assets/           plots (gap_hist.png, terminal_bars.png, ...)
-train.py          trl grpo + unsloth + trackio + qwen2.5-coder-7b
-eval.py           batch rollout harness -> eval.json
-viz.py            gap histograms, terminal bars, training curves
-client.py         http + mcp cli
-Dockerfile        python 3.11-slim + coinor-cbc + non-root user
-openenv.yaml      hub manifest
-Makefile          install, serve, test, eval, viz, bench, train, push-space
-BLOG.md           hackathon submission post
-VIDEO.md          2-minute demo script
+openenv-dsc-co/
+├── pyproject.toml            openenv-core[core] + pulp deps, pytest pythonpath
+├── uv.lock                   pinned resolution for openenv-base docker builds
+├── openenv.yaml              spec_version: 1, type: space, runtime: fastapi, app: server.app:app, port: 8000
+├── __init__.py               package marker
+├── models.py                 re-export shim for openenv push structural check
+├── client.py                 MCPToolClient CLI (tools, loop, query, dispatch, probe, health)
+├── README.md                 this file (hf space frontmatter at top)
+├── BLOG.md                   hackathon submission post
+├── VIDEO.md                  2-minute demo script
+├── Makefile                  install, serve, test, eval, viz, bench, docker, push-space, train
+├── Dockerfile                python 3.11-slim + coinor-cbc + non-root, port 7860 (hf space direct)
+├── requirements.txt          env-only pip deps (mac-safe)
+├── requirements-train.txt    cuda training deps (torch, trl, unsloth)
+├── server/
+│   ├── __init__.py
+│   ├── app.py                create_app(DSCEnv, CallToolAction, CallToolObservation) + fastapi fallback
+│   ├── Dockerfile            openenv-base multi-stage build for `openenv push`
+│   ├── dsc_environment.py    DSCEnv(MCPEnvironment) + 4-tier curriculum + 3 fastmcp tools
+│   ├── models.py             pydantic v2 schemas (DSCAction RootModel, strict int qty)
+│   ├── solver.py             pulp time-expanded min-cost flow + greedy baseline
+│   └── policies.py           zero_op, greedy, optimal_replay baseline rollouts
+├── tests/
+│   ├── test_models.py        strict-int qty, action envelope parsing, observation schema
+│   ├── test_env.py           reset shapes, anti-hack gates, valid flow, horizon termination
+│   └── test_solver.py        milp correctness, tier shapes, bipartite edges
+├── notebooks/
+│   ├── train_kaggle.ipynb    end-to-end grpo run on kaggle t4x2/p100
+│   └── demo.ipynb            before/after rollout plots
+├── docs/
+│   ├── architecture.md
+│   ├── reward-spec.md
+│   ├── milp-formulation.md
+│   ├── curriculum.md
+│   └── anti-hacking.md
+├── assets/                   plots (gap_hist.png, terminal_bars.png, ...)
+├── train.py                  trl grpo + unsloth + trackio + qwen2.5-coder-7b
+├── eval.py                   batch rollout harness -> eval.json
+└── viz.py                    gap histograms, terminal bars, training curves
 ```
 
 ## mcp action space

@@ -23,11 +23,12 @@
 
 ## runtime layers
 
-1. `src/models.py` pydantic v2 schemas; tagged-union discriminator on `kind`
-2. `src/env.py` authoritative state machine, `DSCEnv` class; registers `FastMCP` tools inline
-3. `src/solver.py` pulp min-cost flow; cbc solver pinned at `timeLimit=30`
-4. `src/server.py` fastapi app via `openenv.core.env_server.create_app` with a manual fallback for `/reset`, `/step`, `/state`, `/mcp`
-5. `train.py` trl + unsloth + qwen2.5-coder-7b; `environment_factory=DSCToolEnv`
+1. `server/models.py` pydantic v2 schemas; `DSCAction` is a `RootModel` discriminated on `kind`
+2. `server/dsc_environment.py` authoritative state machine, `DSCEnv(MCPEnvironment)` with `SUPPORTS_CONCURRENT_SESSIONS=True`; registers `FastMCP` tools inline
+3. `server/solver.py` pulp min-cost flow; cbc solver pinned at `timeLimit=30`
+4. `server/app.py` fastapi app via `openenv.core.env_server.http_server.create_app` using `CallToolAction` / `CallToolObservation` with a manual fallback for `/reset`, `/step`, `/state`, `/mcp`
+5. `models.py` (root) re-export shim of `server.models.*` to satisfy `openenv push` structural check
+6. `train.py` trl + unsloth + qwen2.5-coder-7b; `environment_factory=DSCToolEnv`
 
 ## data flow
 

@@ -79,8 +79,10 @@ expected curve: tier-1 terminal reward climbs from ~0.35 (baseline greedy) towar
 ## the proof
 
 - 43 pytest tests, all green (anti-hacking gates, milp correctness, curriculum shapes)
-- fastapi server boots on port 7860 and responds to `/reset`, `/step`, `/state`, `/mcp tools/list`, `/mcp tools/call`
-- docker image builds on python 3.11-slim + coin-or-cbc
+- `openenv validate` returns `[OK] Ready for multi-mode deployment`
+- fastapi server boots on port 8000 (canonical openenv) or 7860 (hf space direct) and exposes `/reset`, `/step`, `/state`, `/metadata`, `/schema`, `/health`, `/mcp`, `/ws`
+- stateful multi-step rollouts over `MCPToolClient` (websocket) return 3 mcp tools with proper json schemas and drive 30-step episodes to a pulp-verified terminal
+- docker image builds either via `openenv push` (openenv-base multi-stage, server/Dockerfile) or direct `docker build .` (python 3.11-slim + coin-or-cbc)
 - greedy vs milp oracle consistently shows 60-600% optimality gap across tiers 1-3, confirming gradient headroom
 
 ## the story arc in one paragraph

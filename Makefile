@@ -15,7 +15,7 @@ help:
 	@echo "  viz            generate plots into assets/"
 	@echo "  bench          tier 1..3 greedy vs milp timing"
 	@echo "  docker         build image"
-	@echo "  push-space     openenv push to hf space"
+	@echo "  push-space     openenv push to hf space (REPO=user/env-name)"
 	@echo "  train          local grpo train (requires cuda)"
 	@echo "  demo           full end-to-end eval + plots"
 	@echo "  clean          remove caches, venvs, eval.json, assets"
@@ -48,7 +48,8 @@ docker:
 	docker build -t openenv-dsc-co .
 
 push-space:
-	openenv push
+	@[ -n "$(REPO)" ] || (echo "set REPO=user/env-name"; exit 1)
+	openenv push -r $(REPO)
 
 train:
 	$(PY) train.py
@@ -59,5 +60,5 @@ demo: eval viz
 	@ls -la assets/
 
 clean:
-	rm -rf .venv_check env env_check env_test __pycache__ src/__pycache__ tests/__pycache__ .pytest_cache eval.json
+	rm -rf .venv_check env env_check env_test env_fresh __pycache__ server/__pycache__ tests/__pycache__ .pytest_cache eval.json *.egg-info
 	find . -name "*.pyc" -delete
