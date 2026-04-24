@@ -60,3 +60,8 @@ Repository = "https://github.com/cyclop5/metascaler-hack"
 [tool.setuptools]
 include-package-data = true
 packages = ["server"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
