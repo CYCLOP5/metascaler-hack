@@ -76,13 +76,39 @@ trl grpo + unsloth on huggingface spaces:
 
 - model: `unsloth/Llama-3.2-3B-Instruct-bnb-4bit` 4-bit QLoRA, r=32
 - defaults are conservative for HF Spaces: `num_generations=4`, `max_completion_length=512`, `beta=0.04`; final runs can override these with `DSC_*` Space variables
-- final submitted training run uses `DSC_MAX_STEPS=1000`, `DSC_DATA_N=2000`, `DSC_NUM_GEN=8`, `DSC_MAX_COMPLETION=1024`, `DSC_SAVE_STEPS=100`, `DSC_RESUME=1`, `DSC_DEBUG=0`, `DSC_LOG_COMPLETIONS=0`
+- final submitted training run uses `DSC_MAX_STEPS=400`, `DSC_DATA_N=2000`, `DSC_NUM_GEN=8`, `DSC_MAX_COMPLETION=768`, `DSC_SAVE_STEPS=50`, `DSC_RESUME=0`, `DSC_DEBUG=0`, `DSC_LOG_COMPLETIONS=0`
 - `environment_factory=DSCToolEnv` is wired in, and reward functions can locally replay JSON tool actions when a TRL build does not pass environments through
 - three reward functions in parallel: cumulative, per-step, terminal - trl sums them into the group advantage
 - the final adapter upload includes `training_metrics.json`, `training_metrics.csv`, and `training_curve.png` so the reward/loss evidence is preserved outside transient Space logs
 - trackio hooks log mean rewards live to a public hf space
 
-expected curve: tier-1 terminal reward climbs from ~0.35 (baseline greedy) toward ~0.85 within a few hundred grpo steps. tier-2 from 0.75 toward 0.9+. tier-3 is a stretch goal dependent on wall-clock.
+the completed evidence run lasted 400 GRPO steps over 2,000 prompts. combined reward rose from 0.622 to 1.304, cumulative env reward rose from 0.505 to 0.852, and terminal MILP reward rose from 0.052 to 0.226. the run preserved non-zero reward variance (`frac_reward_zero_std=0` at the final step) and non-zero gradients, and the adapter repo stores the full metrics CSV/JSON plus the final training curve.
+
+![final GRPO training curve](assets/training_curve.png)
+
+the optimization target remains the greedy-to-milp gap: greedy tier-1 terminal is ~0.39, while milp replay reaches ~0.94.
+
+## how to try the environment
+
+Open [AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co), click `Reset`, then call the tools:
+
+```text
+Type: call_tool
+Tool Name: query_network
+Arguments: {"source_id": "S0", "dest_id": "W0"}
+```
+
+```text
+Type: call_tool
+Tool Name: dispatch_inventory
+Arguments: {"routes":[{"src":"S0","dst":"W0","qty":20}]}
+```
+
+```text
+Type: call_tool
+Tool Name: advance_cycle
+Arguments: {}
+```
 
 ## the proof
 
@@ -103,6 +129,7 @@ an llm planner starts at a 400% optimality gap because it thinks locally. the en
 - hf space training node: [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)
 - github: [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)
 - trained lora adapter: [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)   (published after the training run)
+- final training curve: [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png)
 - trackio dashboard: [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio)   (dashboard app lives in `trackio_space/`)
 - 2-minute demo video: [https://youtu.be/TBD](https://youtu.be/TBD)
 

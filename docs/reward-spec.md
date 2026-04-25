@@ -30,6 +30,44 @@ dense sum is hard-capped at 0.4 which is strictly less than the minimum possible
   - `terminal_reward_func` returns `env.terminal` (final gap vs milp)
 - if a TRL build calls reward functions without `environments`, `train.py` parses JSON tool-action lines from the completion, replays them through a fresh `DSCToolEnv`, and scores the same cumulative/step/terminal channels
 
+## trainer metrics
+
+During the final HF Space run, the most important metrics are:
+
+
+| metric                              | meaning                                                                                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rewards/reward_func/mean`          | cumulative environment reward from replayed tool actions                                                                                            |
+| `rewards/schema_reward_func/mean`   | dense last-step validity/action reward                                                                                                              |
+| `rewards/terminal_reward_func/mean` | MILP terminal reward; non-zero means episodes reached step 30 and called the verifier                                                               |
+| `reward`                            | combined reward seen by GRPO                                                                                                                        |
+| `reward_std`                        | reward spread across generated completions; non-zero gives GRPO contrast                                                                            |
+| `frac_reward_zero_std`              | fraction of groups with no reward variation; `0` is healthy                                                                                         |
+| `grad_norm`                         | non-zero gradient updates indicate training is not dead                                                                                             |
+| `completions/clipped_ratio`         | fraction of generations hitting `DSC_MAX_COMPLETION`; high values mean inefficient stopping, not invalid reward if terminal reward remains non-zero |
+
+
+The final evidence run uses `DSC_MAX_STEPS=400`, `DSC_NUM_GEN=8`, and `DSC_MAX_COMPLETION=768`. Training artifacts are written into the uploaded LoRA repo as `training_metrics.json`, `training_metrics.csv`, `training_summary.json`, and `training_curve.png`.
+
+Final run summary:
+
+
+| metric                       | result             |
+| ---------------------------- | ------------------ |
+| runtime                      | 17,469.9s / 4h 51m |
+| final combined reward        | 1.304              |
+| max combined reward          | 1.365              |
+| final cumulative env reward  | 0.852              |
+| final terminal MILP reward   | 0.226              |
+| max terminal MILP reward     | 0.241              |
+| final `reward_std`           | 0.079              |
+| final `frac_reward_zero_std` | 0.0                |
+| final `grad_norm`            | 0.045              |
+| final KL                     | 0.0077             |
+
+
+The completion clipping ratio stayed high, which means the model often used the full generation budget. This does not invalidate the reward: only parsed JSON tool actions are replayed, invalid tails are ignored, and terminal reward is only emitted when the environment reaches the 30-step MILP verifier.
+
 ## numerical safety
 
 - terminal clamp `[0, 1]` avoids unbounded reward under a near-zero agent_cost
