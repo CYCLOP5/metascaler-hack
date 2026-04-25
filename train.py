@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import importlib.util
 import torch
 if not hasattr(torch, "int1"):
     torch.int1 = torch.int8
@@ -189,7 +190,11 @@ def main() -> None:
     from trl import GRPOConfig, GRPOTrainer
 
     import torch as _torch
-    _use_fast = _torch.cuda.get_device_capability()[0] >= 8
+    _has_vllm = importlib.util.find_spec("vllm") is not None
+    _gpu_supports_fast = _torch.cuda.get_device_capability()[0] >= 8
+    _use_fast = _gpu_supports_fast and _has_vllm
+    if _gpu_supports_fast and not _has_vllm:
+        print("vllm not installed; disabling fast_inference and using standard path.")
     print(f"load model fast_inference={_use_fast}")
 
     _load_kwargs = dict(

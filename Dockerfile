@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir \
   "bitsandbytes==0.45.2"
 RUN pip install --no-cache-dir unsloth_zoo "unsloth @ git+https://github.com/unslothai/unsloth.git"
 RUN pip uninstall -y torchao || true
+RUN pip install --no-cache-dir vllm
 RUN pip install --no-cache-dir pulp pydantic fastapi uvicorn[standard] fastmcp gymnasium openenv-core trackio
 
 COPY --chown=user . /app/
