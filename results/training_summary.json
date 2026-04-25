@@ -1,0 +1,18 @@
+{
+  "model_name": "unsloth/Llama-3.2-3B-Instruct-bnb-4bit",
+  "max_steps": 400,
+  "dataset_size": 2000,
+  "num_generations": 8,
+  "max_completion_length": 768,
+  "save_steps": 50,
+  "trackio_project": "openenv-dsc-co",
+  "trackio_space": "AceofStades/dsc-co-trackio",
+  "train_metrics": {
+    "train_runtime": 17469.8813,
+    "train_samples_per_second": 0.183,
+    "train_steps_per_second": 0.023,
+    "total_flos": 0.0,
+    "train_loss": -0.049130078829475676
+  },
+  "num_log_history_rows": 402
+}

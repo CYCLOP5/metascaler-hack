@@ -7,3 +7,4 @@ __pycache__/
 eval.json
 grpo_dsc_co/
 *.log
+.DS_Store

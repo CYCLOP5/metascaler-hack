@@ -1,91 +1,112 @@
 # 2-minute demo video script
 
-target: < 120 seconds. 16:9. 30fps. voiceover + screen capture.
+target: < 120 seconds. 16:9. screen recording + voiceover. no custom UI required.
+
+## recording setup
+
+Use browser tabs and local files we already have:
+
+- local animated visual: `stufftodo/demo_animation.html`
+- `README.md` rendered on GitHub or Hugging Face
+- public env Space: https://huggingface.co/spaces/AceofStades/dsc_co
+- Trackio dashboard: https://huggingface.co/spaces/AceofStades/dsc-co-trackio
+- LoRA repo: https://huggingface.co/AceofStades/dsc-co-grpo-lora
+- local plots: `assets/terminal_bars.png`, `assets/gap_hist.png`, `assets/training_curve.png`
+- code snippets: `server/dsc_environment.py`, `server/solver.py`, `train.py`
 
 ## shot list
 
 ### scene 1  (0:00 - 0:12)  the hook
 
-**screen**: a terminal running a 7b baseline agent against the dsc env. agent_cost climbs into the red. retail node flashes empty.
+**screen**: open `stufftodo/demo_animation.html`. Start on the animated supplier -> warehouse -> retail flow, then cut to the README baseline table showing zero-op/greedy/milp replay gaps.
 
-**voiceover**: "language models can write code. they can't yet plan. give a 7-billion parameter model a 30-step supply chain, and it empties the closest warehouse on turn one, then watches the retailer starve for the next twenty-nine turns."
+**voiceover**: "This environment trains an LLM to do something it is bad at: plan through delayed consequences. In a 30-step supply chain, greedy behavior leaves a 159 percent gap on tier one; doing nothing is worse."
 
-**caption**: `baseline optimality gap: 440%`
-
----
-
-### scene 2  (0:12 - 0:30)  the environment
-
-**screen**: a simple animated network diagram. 1 supplier -> 1 warehouse -> 1 retailer. labels: lead_time, capacity, unit_cost. arrows move.
-
-**voiceover**: "openenv-dsc-co is a verifiable 30-step supply-chain environment. the agent discovers the graph via mcp tool calls - `query_network`, `dispatch_inventory`, `advance_cycle`. every request is strict-json validated. negative quantities, phantom edges, cyclic reward farming all hit hard programmatic walls."
-
-**caption**: `3 mcp tools. 30 steps. 100% api-driven.`
+**caption**: `30-step planning. MILP-verified reward.`
 
 ---
 
-### scene 3  (0:30 - 0:50)  the verifier
+### scene 2  (0:12 - 0:30)  run the public env
 
-**screen**: swimlane. left: agent trajectory + agent_cost. right: pulp milp formulation (objective and constraints typed out line by line). a cbc solver log fills briefly. right side shows optimal_cost.
+**screen**: open `AceofStades/dsc_co`. Click `Reset`. Fill the OpenEnv form:
 
-**voiceover**: "the reward is not opinion. at step thirty, pulp compiles the scenario into a mixed-integer linear program, coin-or cbc computes the mathematical minimum cost, and the terminal reward is the ratio - optimal over agent - clamped to zero-one. no lm-as-judge. zero-variance signal."
+```text
+Type: call_tool
+Tool Name: query_network
+Arguments: {"source_id": "S0", "dest_id": "W0"}
+```
 
-**caption**: `reward = clip(optimal / agent, 0, 1)`
+Then show `dispatch_inventory` and `advance_cycle` examples from README.
 
----
+**voiceover**: "The agent sees a typed JSON environment and acts through three tools: query the network, dispatch inventory, and advance the cycle. The graph is partially observable, so it has to ask before it ships."
 
-### scene 4  (0:50 - 1:15)  the rl loop
-
-**screen**: overlay of `train.py` -> `GRPOTrainer` ->  `DSCToolEnv` rollouts -> local JSON action replay fallback -> group-relative advantage formula -> unsloth.
-
-**voiceover**: "we train llama-3.2-3b-instruct with trl grpo and unsloth 4-bit quantization on huggingface spaces. the model emits json tool actions. if trl does not hand an environment object into the reward function, train.py replays those actions locally through the same dsc environment, so dense shaping and sparse terminal reward still become a real policy-gradient signal."
-
-**caption**: `grpo + unsloth + verified local replay on huggingface spaces`
+**caption**: `query_network -> dispatch_inventory -> advance_cycle`
 
 ---
 
-### scene 5  (1:15 - 1:40)  the before / after
+### scene 3  (0:30 - 0:48)  the verifier
 
-**screen**: split-screen. left: pre-training rollout animation. right: post-training rollout animation on the exact same seed. both overlay a running agent_cost plot. right side converges near optimal; left keeps climbing.
+**screen**: `docs/milp-formulation.md` or `server/solver.py`, highlighting the min-cost-flow objective and `pulp.PULP_CBC_CMD`. Briefly cut back to the animated page's metric cards.
 
-**voiceover**: "same seed, same scenario. before training, the agent panics, ships late, pays shortage. after training, the agent queries the network, dispatches bulk from supplier to warehouse on turn one - accepting the five-step delay - then meters small shipments to retail exactly when demand spikes."
+**voiceover**: "The reward is not a language-model judge. At step thirty, the exact same scenario is solved as a min-cost-flow MILP with CBC. Terminal reward is optimal cost over agent cost, clamped between zero and one."
 
-**caption**: `baseline 0.39 terminal --> trained 0.85+ terminal`
-
----
-
-### scene 6  (1:40 - 1:55)  the proof
-
-**screen**: grafana-ish trackio dashboard. mean reward curve climbing. 43 green pytest dots. docker build success. hf space url.
-
-**voiceover**: "forty-three tests green. docker space deploys in one command. the trackio dashboard is public - anyone can watch the reward curve climb in real time."
-
-**caption**: `hf space live. milp-verified. 100% reproducible.`
+**caption**: `terminal = clip(optimal_cost / agent_cost, 0, 1)`
 
 ---
 
-### scene 7  (1:55 - 2:00)  the cta
+### scene 4  (0:48 - 1:10)  anti-hacking
 
-**screen**: repo url + hf space url + command: `openenv push`.
+**screen**: `docs/anti-hacking.md` or README anti-hacking table. Highlight negative qty, phantom edges, and dense reward cap.
 
-**voiceover**: "openenv-dsc-co. go clone it."
+**voiceover**: "The environment is hard to game. Negative or float quantities terminate with a penalty. Phantom edges end the episode. Dense reward is capped, so cyclic reward farming cannot beat the terminal verifier."
 
-**caption**: `github.com/CYCLOP5/metascaler-hack  /  hf.co/spaces/AceofStades/dsc_co`
+**caption**: `strict tool schema + dense cap + phantom-edge gate`
+
+---
+
+### scene 5  (1:10 - 1:33)  training evidence
+
+**screen**: Trackio dashboard or `assets/training_curve.png`, then LoRA repo file list showing `training_metrics.csv`, `training_metrics.json`, and `training_curve.png`.
+
+**voiceover**: "We trained Llama 3.2 3B with TRL GRPO and Unsloth for 400 steps on Hugging Face Spaces. Combined reward rose from 0.622 to 1.304. Verified terminal reward rose from 0.052 to 0.226, and reward variance stayed non-zero."
+
+**caption**: `400 GRPO steps: reward 0.622 -> 1.304`
+
+---
+
+### scene 6  (1:33 - 1:50)  baseline headroom
+
+**screen**: show `assets/terminal_bars.png` and `assets/gap_hist.png`.
+
+**voiceover**: "The baselines explain the learning target. Greedy reactive planning is far below the MILP replay ceiling. That gap is the signal this environment exposes."
+
+**caption**: `greedy terminal 0.39 vs MILP replay 0.94 on tier 1`
+
+---
+
+### scene 7  (1:50 - 2:00)  close
+
+**screen**: links table in README, ending on the env Space URL and LoRA repo URL.
+
+**voiceover**: "The environment is live on Hugging Face, the adapter and metrics are public, and every reward number is computed by a deterministic verifier."
+
+**caption**: `hf.co/spaces/AceofStades/dsc_co`
 
 ---
 
 ## assets checklist
 
-- `assets/terminal_bars.png` - rendered baseline terminal rewards
-- `assets/gap_hist.png` - rendered baseline optimality gaps
-- `training_curve.png` - generated by `train.py` and uploaded with the LoRA adapter after final training
-- `assets/pre_vs_post.mp4` - side-by-side animation (produced separately)
-- `assets/network_diagram.png` - simple supplier/warehouse/retail node diagram
+- [x] `assets/terminal_bars.png` - baseline terminal rewards
+- [x] `assets/gap_hist.png` - baseline optimality gaps
+- [x] `assets/training_curve.png` - final GRPO reward/loss curve
+- [x] `stufftodo/demo_animation.html` - local animated visual for screen recording
+- [x] public Trackio run - `AceofStades-1777132468`
+- [x] LoRA repo metrics - `training_metrics.csv`, `training_metrics.json`, `training_summary.json`
+- [ ] YouTube URL - add to README and `BLOG.md` after upload
 
 ## voiceover tone
 
-- flat, technical, no excitement words
-- short sentences
-- reader pacing ~160 wpm for exactly 320 words in 120 seconds
-- emphasis only on numbers: `440%`, `30`, `zero-variance`, `optimal / agent`
+- calm, concrete, and judge-friendly
+- no hype words
+- emphasize: `30 steps`, `MILP verifier`, `reward 0.622 -> 1.304`, `terminal 0.052 -> 0.226`
 

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>openenv-dsc-co demo animation</title>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --panel: #141922;
+      --panel-2: #1b2230;
+      --text: #edf2f7;
+      --muted: #aab4c2;
+      --line: #334155;
+      --accent: #60a5fa;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    .frame {
+      width: 100vw;
+      height: 100vh;
+      padding: 34px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 22px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 17px;
+      max-width: 900px;
+      line-height: 1.45;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1.18fr 0.82fr;
+      gap: 22px;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .network {
+      height: 100%;
+      min-height: 500px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 7px;
+      background: var(--accent);
+    }
+
+    .dot.good { background: var(--good); }
+    .dot.warn { background: var(--warn); }
+
+    svg {
+      width: 100%;
+      height: calc(100% - 34px);
+      min-height: 430px;
+    }
+
+    .edge {
+      stroke: #475569;
+      stroke-width: 5;
+      stroke-linecap: round;
+      opacity: 0.72;
+    }
+
+    .edge-label {
+      fill: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .node circle {
+      stroke: #93c5fd;
+      stroke-width: 3;
+      fill: #111827;
+    }
+
+    .node text {
+      fill: var(--text);
+      text-anchor: middle;
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .node .type {
+      fill: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .shipment {
+      fill: var(--good);
+      stroke: #bbf7d0;
+      stroke-width: 2;
+      offset-path: path("M 165 250 C 280 110, 450 110, 560 250");
+      animation: ship1 4.8s linear infinite;
+    }
+
+    .shipment.two {
+      fill: var(--accent);
+      stroke: #bfdbfe;
+      offset-path: path("M 560 250 C 680 390, 845 390, 960 250");
+      animation: ship2 4.8s linear infinite;
+      animation-delay: 1.35s;
+    }
+
+    .shipment.three {
+      fill: var(--warn);
+      stroke: #fde68a;
+      offset-path: path("M 165 250 C 280 110, 450 110, 560 250");
+      animation: ship1 4.8s linear infinite;
+      animation-delay: 2.55s;
+    }
+
+    @keyframes ship1 {
+      0% { offset-distance: 0%; opacity: 0; transform: scale(0.8); }
+      12% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; transform: scale(1); }
+    }
+
+    @keyframes ship2 {
+      0% { offset-distance: 0%; opacity: 0; transform: scale(0.8); }
+      12% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; transform: scale(1); }
+    }
+
+    .right {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 22px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 850;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .metric .label {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 112px 1fr 52px;
+      gap: 12px;
+      align-items: center;
+      margin: 13px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .bar-shell {
+      height: 12px;
+      border-radius: 999px;
+      background: #0f172a;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--accent);
+      animation: grow 1.2s ease-out both;
+    }
+
+    .bar.good { background: var(--good); }
+    .bar.bad { background: var(--bad); }
+
+    @keyframes grow {
+      from { width: 0; }
+    }
+
+    .terminal-line {
+      height: 160px;
+      display: grid;
+      align-items: end;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+      margin-top: 18px;
+      border-bottom: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      padding: 0 10px;
+    }
+
+    .curve-bar {
+      background: var(--good);
+      border-radius: 8px 8px 0 0;
+      opacity: 0.9;
+      animation: pulse 3.2s ease-in-out infinite;
+    }
+
+    .curve-bar:nth-child(2n) { opacity: 0.75; }
+    .curve-bar:nth-child(3n) { opacity: 0.6; }
+
+    @keyframes pulse {
+      0%, 100% { filter: brightness(0.9); }
+      50% { filter: brightness(1.25); }
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline {
+      display: flex;
+      gap: 8px;
+      width: min(660px, 55vw);
+    }
+
+    .tick {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: #243042;
+      overflow: hidden;
+    }
+
+    .tick span {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: var(--accent);
+      transform-origin: left;
+      animation: timefill 14s linear infinite;
+    }
+
+    .tick:nth-child(2) span { animation-delay: -2s; }
+    .tick:nth-child(3) span { animation-delay: -4s; }
+    .tick:nth-child(4) span { animation-delay: -6s; }
+    .tick:nth-child(5) span { animation-delay: -8s; }
+    .tick:nth-child(6) span { animation-delay: -10s; }
+
+    @keyframes timefill {
+      0% { transform: scaleX(0); }
+      14% { transform: scaleX(1); }
+      100% { transform: scaleX(1); }
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header>
+      <div>
+        <h1>openenv-dsc-co: long-horizon supply-chain planning</h1>
+        <div class="subtitle">A 30-step partially observable environment where every policy is scored against a deterministic Pulp/CBC MILP verifier.</div>
+      </div>
+      <div class="badge">GRPO + Unsloth + Llama 3.2 3B</div>
+    </header>
+
+    <main>
+      <section class="card network">
+        <div class="legend">
+          <span><i class="dot"></i>query network</span>
+          <span><i class="dot good"></i>dispatch inventory</span>
+          <span><i class="dot warn"></i>advance cycle</span>
+        </div>
+        <svg viewBox="0 0 1120 520" role="img" aria-label="animated supplier warehouse retail network">
+          <path class="edge" d="M 165 250 C 280 110, 450 110, 560 250" />
+          <path class="edge" d="M 560 250 C 680 390, 845 390, 960 250" />
+          <text class="edge-label" x="350" y="130">lead time, capacity, unit cost</text>
+          <text class="edge-label" x="725" y="410">demand arrives every cycle</text>
+
+          <circle class="shipment" r="15"></circle>
+          <circle class="shipment two" r="15"></circle>
+          <circle class="shipment three" r="10"></circle>
+
+          <g class="node" transform="translate(165,250)">
+            <circle r="72"></circle>
+            <text y="-4">S0</text>
+            <text class="type" y="22">supplier</text>
+          </g>
+          <g class="node" transform="translate(560,250)">
+            <circle r="72"></circle>
+            <text y="-4">W0</text>
+            <text class="type" y="22">warehouse</text>
+          </g>
+          <g class="node" transform="translate(960,250)">
+            <circle r="72"></circle>
+            <text y="-4">R0</text>
+            <text class="type" y="22">retail</text>
+          </g>
+        </svg>
+      </section>
+
+      <aside class="right">
+        <section class="card">
+          <h2>Training Evidence</h2>
+          <div class="metric-grid">
+            <div class="metric">
+              <div class="value">1.304</div>
+              <div class="label">final combined reward, up from 0.622</div>
+            </div>
+            <div class="metric">
+              <div class="value">0.226</div>
+              <div class="label">final terminal MILP reward, up from 0.052</div>
+            </div>
+            <div class="metric">
+              <div class="value">400</div>
+              <div class="label">GRPO steps on HF Spaces</div>
+            </div>
+            <div class="metric">
+              <div class="value">4h51m</div>
+              <div class="label">A100 training runtime</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Baseline Headroom</h2>
+          <div class="bar-row">
+            <span>zero-op</span>
+            <div class="bar-shell"><div class="bar bad" style="width: 19%"></div></div>
+            <span>0.19</span>
+          </div>
+          <div class="bar-row">
+            <span>greedy</span>
+            <div class="bar-shell"><div class="bar" style="width: 39%"></div></div>
+            <span>0.39</span>
+          </div>
+          <div class="bar-row">
+            <span>MILP replay</span>
+            <div class="bar-shell"><div class="bar good" style="width: 94%"></div></div>
+            <span>0.94</span>
+          </div>
+          <div class="terminal-line">
+            <div class="curve-bar" style="height: 35%"></div>
+            <div class="curve-bar" style="height: 42%"></div>
+            <div class="curve-bar" style="height: 50%"></div>
+            <div class="curve-bar" style="height: 58%"></div>
+            <div class="curve-bar" style="height: 70%"></div>
+            <div class="curve-bar" style="height: 76%"></div>
+            <div class="curve-bar" style="height: 82%"></div>
+            <div class="curve-bar" style="height: 88%"></div>
+          </div>
+          <p class="small">Terminal reward is only emitted after the 30-step episode calls the MILP verifier.</p>
+        </section>
+      </aside>
+    </main>
+
+    <footer>
+      <div>hf.co/spaces/AceofStades/dsc_co</div>
+      <div class="timeline">
+        <div class="tick"><span></span></div>
+        <div class="tick"><span></span></div>
+        <div class="tick"><span></span></div>
+        <div class="tick"><span></span></div>
+        <div class="tick"><span></span></div>
+        <div class="tick"><span></span></div>
+      </div>
+      <div>reward = dense shaping + MILP terminal verifier</div>
+    </footer>
+  </div>
+</body>
+</html>
