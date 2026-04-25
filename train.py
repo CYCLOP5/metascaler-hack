@@ -33,6 +33,9 @@ ENV_URL = os.environ.get("DSC_ENV_URL", "")
 TRACKIO_PROJECT = os.environ.get("DSC_TRACKIO", "openenv-dsc-co")
 TRACKIO_SPACE = os.environ.get("DSC_TRACKIO_SPACE", "")
 REPORT_TO = os.environ.get("DSC_REPORT", "none")
+OUT_DIR = os.environ.get("DSC_OUT_DIR", "./grpo_dsc_co")
+HF_REPO = os.environ.get("DSC_HF_REPO", "")
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
 LOG_COMPLETIONS = os.environ.get("DSC_LOG_COMPLETIONS", "0").lower() in {
     "1",
     "true",
@@ -279,6 +282,27 @@ def _log_trackio(metrics: dict) -> None:
         pass
 
 
+def _push_to_hub(folder_path: str) -> None:
+    if not HF_REPO:
+        print("DSC_HF_REPO not set; skipping hub upload.")
+        return
+    if not HF_TOKEN:
+        print("HF_TOKEN not set; skipping hub upload.")
+        return
+
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    api.create_repo(HF_REPO, token=HF_TOKEN, repo_type="model", exist_ok=True)
+    api.upload_folder(
+        folder_path=folder_path,
+        repo_id=HF_REPO,
+        repo_type="model",
+        token=HF_TOKEN,
+    )
+    print(f"uploaded adapter to https://huggingface.co/{HF_REPO}")
+
+
 def main() -> None:
     print("init train")
     _init_trackio()
@@ -343,7 +367,7 @@ def main() -> None:
     dataset = _build_dataset()
 
     _config_kwargs = dict(
-        output_dir="./grpo_dsc_co",
+        output_dir=OUT_DIR,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
         learning_rate=5e-6,
@@ -382,7 +406,9 @@ def main() -> None:
     print("run train")
     trainer.train()
     print("save lora")
-    trainer.save_model("./grpo_dsc_co/final")
+    final_dir = os.path.join(OUT_DIR, "final")
+    trainer.save_model(final_dir)
+    _push_to_hub(final_dir)
 
 
 if __name__ == "__main__":
