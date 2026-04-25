@@ -10,7 +10,7 @@ MODEL_NAME = os.environ.get("DSC_MODEL", "unsloth/Llama-3.2-3B-Instruct-bnb-4bit
 MAX_SEQ = int(os.environ.get("DSC_MAX_SEQ", "4096"))
 LORA_R = int(os.environ.get("DSC_LORA_R", "32"))
 DIFFICULTY = int(os.environ.get("DSC_TIER", "1"))
-NUM_GEN = int(os.environ.get("DSC_NUM_GEN", "4"))
+NUM_GEN = int(os.environ.get("DSC_NUM_GEN", "8"))
 DATASET_SIZE = int(os.environ.get("DSC_DATA_N", "2000"))
 MAX_STEPS = int(os.environ.get("DSC_MAX_STEPS", "0"))
 ENV_URL = os.environ.get("DSC_ENV_URL", "")
@@ -218,7 +218,7 @@ def main() -> None:
         gradient_accumulation_steps=8,
         learning_rate=5e-6,
         num_generations=NUM_GEN,
-        max_completion_length=1024,
+        max_completion_length=2048,
         beta=0.04,
         temperature=0.7,
         use_vllm=_use_fast,

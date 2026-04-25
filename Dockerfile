@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel
+FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-devel
 
 RUN apt-get update && apt-get install -y git wget gcc coinor-cbc && rm -rf /var/lib/apt/lists/*
 
@@ -8,10 +8,9 @@ ENV PATH="/home/user/.local/bin:$PATH"
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade "torchvision>=0.25.0" "torchaudio"
-RUN pip install --no-cache-dir "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir "unsloth @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install --no-cache-dir trl peft accelerate bitsandbytes
-
 RUN pip install --no-cache-dir pulp pydantic fastapi uvicorn[standard] fastmcp gymnasium openenv-core trackio
 
 COPY --chown=user . /app/
