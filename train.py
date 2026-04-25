@@ -6,8 +6,8 @@ import random
 from typing import Any, List, Optional
 
 
-MODEL_NAME = os.environ.get("DSC_MODEL", "unsloth/Qwen2.5-Coder-7B-Instruct")
-MAX_SEQ = int(os.environ.get("DSC_MAX_SEQ", "8192"))
+MODEL_NAME = os.environ.get("DSC_MODEL", "unsloth/gemma-4-e2b-bnb-4bit")
+MAX_SEQ = int(os.environ.get("DSC_MAX_SEQ", "4096"))
 LORA_R = int(os.environ.get("DSC_LORA_R", "32"))
 DIFFICULTY = int(os.environ.get("DSC_TIER", "1"))
 NUM_GEN = int(os.environ.get("DSC_NUM_GEN", "8"))
@@ -171,15 +171,21 @@ def main() -> None:
 
     from trl import GRPOConfig, GRPOTrainer
 
-    print("load model")
-    model, tokenizer = FastLanguageModel.from_pretrained(
+    import torch as _torch
+    _use_fast = _torch.cuda.get_device_capability()[0] >= 8
+    print(f"load model fast_inference={_use_fast}")
+
+    _load_kwargs = dict(
         model_name=MODEL_NAME,
         max_seq_length=MAX_SEQ,
         load_in_4bit=True,
-        fast_inference=True,
-        gpu_memory_utilization=0.55,
-        max_lora_rank=LORA_R,
+        fast_inference=_use_fast,
     )
+    if _use_fast:
+        _load_kwargs["gpu_memory_utilization"] = 0.55
+        _load_kwargs["max_lora_rank"] = LORA_R
+
+    model, tokenizer = FastLanguageModel.from_pretrained(**_load_kwargs)
 
     model = FastLanguageModel.get_peft_model(
         model,
@@ -206,12 +212,11 @@ def main() -> None:
         gradient_accumulation_steps=8,
         learning_rate=5e-6,
         num_generations=NUM_GEN,
-        max_completion_length=4096,
+        max_completion_length=2048,
         beta=0.04,
-
         temperature=0.7,
-        use_vllm=True,
-        vllm_mode="colocate",
+        use_vllm=_use_fast,
+        vllm_mode="colocate" if _use_fast else None,
         chat_template_kwargs={"enable_thinking": False},
         log_completions=True,
         logging_steps=1,
