@@ -5,6 +5,14 @@ import os
 import torch
 if not hasattr(torch, "int1"):
     torch.int1 = torch.int8
+# torchao in some transformers builds references low-bit dtypes that
+# are not present on torch 2.5.x wheels used in HF Spaces base images.
+if not hasattr(torch, "int2"):
+    torch.int2 = torch.int8
+if not hasattr(torch, "int3"):
+    torch.int3 = torch.int8
+if not hasattr(torch, "int4"):
+    torch.int4 = torch.int8
 import random
 from typing import Any, List, Optional
 

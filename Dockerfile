@@ -9,8 +9,16 @@ ENV PATH="/home/user/.local/bin:$PATH"
 WORKDIR /app
 
 RUN pip install --no-cache-dir --upgrade pip
+# Keep HF Space runtime on a torch/transformers combo compatible with this CUDA base image.
+RUN pip install --no-cache-dir \
+  "transformers==4.49.0" \
+  "accelerate==1.3.0" \
+  "peft==0.14.0" \
+  "datasets==3.2.0" \
+  "trl==0.14.0" \
+  "bitsandbytes==0.45.2"
 RUN pip install --no-cache-dir unsloth_zoo "unsloth @ git+https://github.com/unslothai/unsloth.git"
-RUN pip install --no-cache-dir trl peft accelerate bitsandbytes
+RUN pip uninstall -y torchao || true
 RUN pip install --no-cache-dir pulp pydantic fastapi uvicorn[standard] fastmcp gymnasium openenv-core trackio
 
 COPY --chown=user . /app/
