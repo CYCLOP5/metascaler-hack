@@ -1,7 +1,5 @@
 ---
-
-## title: openenv-dsc-co
-
+title: openenv-dsc-co
 emoji: "📦"
 colorFrom: indigo
 colorTo: red
@@ -10,18 +8,18 @@ app_port: 7860
 pinned: true
 license: apache-2.0
 tags:
-
-- openenv
-- rlvr
-- rlve
-- grpo
-- trl
-- unsloth
-- supply-chain
-- long-horizon
-- mcp
-- milp
+  - openenv
+  - rlvr
+  - rlve
+  - grpo
+  - trl
+  - unsloth
+  - supply-chain
+  - long-horizon
+  - mcp
+  - milp
 short_description: 30-step supply chain rlvr env with pulp milp oracle
+---
 
 # openenv-dsc-co
 
@@ -35,7 +33,7 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | live hf space (env server)      | [https://huggingface.co/spaces/AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co)                                                                                         |
 | hf space (training node)        | [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)                                                       |
 | github source                   | [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)                                                                                                     |
-| trained lora adapter            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)                                                              |
+| trained lora adapter            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)                                                                                   |
 | final training curve            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png) (uploaded with adapter) |
 | trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                          |
 | blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                           |
@@ -44,7 +42,7 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 
 ## docs index
 
-start here, then jump into whichever judge track matters most:
+start here, then jump into whichever md interests you most:
 
 
 | doc                                                  | what it shows                                                 |
@@ -135,7 +133,24 @@ llms default to step-wise greedy decisions. give a 7b instruct model a 30-step s
 | gradient headroom                  | ~0.55 terminal reward points |
 
 
-baseline terminal reward
+![baseline terminal reward](assets/terminal_bars.png)
+
+## final training results
+
+Final GRPO evidence run: `400` steps, `2,000` prompts, `8` generations per prompt, `max_completion_length=768`, `Llama-3.2-3B-Instruct` 4-bit QLoRA via Unsloth on an A100 Space.
+
+| metric | first logged step | final step | best / aggregate |
+|---|---:|---:|---:|
+| combined reward | 0.622 | 1.304 | max 1.365 |
+| cumulative env reward | 0.505 | 0.852 | last-25 mean 0.855 |
+| terminal MILP reward | 0.052 | 0.226 | max 0.241 |
+| reward std | 0.387 | 0.079 | `frac_reward_zero_std=0` at final |
+| GRPO train loss | — | -0.049 | 400-step run |
+| runtime | — | 4h 51m | `0.023` steps/sec |
+
+![final GRPO training curve](assets/training_curve.png)
+
+caption: the model moves from sparse/low terminal verifier reward to stable non-zero MILP terminal reward while maintaining non-zero reward variance and gradients. The high completion clipping rate reflects inefficient stopping, but terminal reward remains active because valid parsed actions reach the 30-step verifier.
 
 ## quick start
 
@@ -420,17 +435,6 @@ make test
 - horizon termination with milp finalize
 - milp correctness: `optimal_cost ≤ greedy_cost` on random tier-1 scenarios
 - bipartite edge topology
-
-## judging criteria alignment
-
-
-| criterion                    | weight | evidence                                                                                                                                      |
-| ---------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| environment innovation       | 40%    | time-expanded graph with milp oracle; 3 hard-gated exploitation vectors; 4-tier procedural curriculum with ema gating                         |
-| storytelling                 | 30%    | `BLOG.md` + `stufftodo/VIDEO.md` with explicit before/after arc and numbers                                                                   |
-| showing improvement          | 20%    | `make eval` + `make viz` produces gap histograms; trackio live dashboard hook; near-optimal replay baseline provides ground-truth upper bound |
-| reward and training pipeline | 10%    | 43 green tests; composite rubric + anti-hack gates; `train.py` with 3 reward functions + trackio + strict grpo config                         |
-
 
 ## credits
 
