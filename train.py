@@ -39,6 +39,7 @@ LOG_COMPLETIONS = os.environ.get("DSC_LOG_COMPLETIONS", "0").lower() in {
     "yes",
 }
 DEBUG_LOG_PATH = "/Users/cyclops/Desktop/letswin/.cursor/debug-9a31b4.log"
+DEBUG_LOG_FALLBACK_PATH = "/tmp/debug-9a31b4.log"
 DEBUG_SESSION_ID = "9a31b4"
 DEBUG_RUN_ID = os.environ.get("DSC_DEBUG_RUN_ID", "baseline")
 
@@ -54,8 +55,17 @@ def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict) -> Non
         "timestamp": int(time.time() * 1000),
     }
     try:
+        os.makedirs(os.path.dirname(DEBUG_LOG_PATH), exist_ok=True)
         with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(json.dumps(payload, separators=(",", ":")) + "\n")
+    except Exception:
+        try:
+            with open(DEBUG_LOG_FALLBACK_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(payload, separators=(",", ":")) + "\n")
+        except Exception:
+            pass
+    try:
+        print(f"[DBG {hypothesis_id}] {location} :: {message}")
     except Exception:
         pass
 
