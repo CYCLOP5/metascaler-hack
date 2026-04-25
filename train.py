@@ -6,7 +6,7 @@ import random
 from typing import Any, List, Optional
 
 
-MODEL_NAME = os.environ.get("DSC_MODEL", "unsloth/gemma-4-E2B-unsloth-bnb-4bit")
+MODEL_NAME = os.environ.get("DSC_MODEL", "unsloth/Llama-3.2-3B-Instruct-bnb-4bit")
 MAX_SEQ = int(os.environ.get("DSC_MAX_SEQ", "4096"))
 LORA_R = int(os.environ.get("DSC_LORA_R", "32"))
 DIFFICULTY = int(os.environ.get("DSC_TIER", "1"))
