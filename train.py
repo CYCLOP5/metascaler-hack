@@ -178,8 +178,9 @@ SYSTEM_PROMPT = (
     "{\"kind\":\"query_network\",\"source_id\":\"W0\",\"dest_id\":\"R0\"}\n"
     "{\"kind\":\"dispatch_inventory\",\"routes\":[{\"src\":\"W0\",\"dst\":\"R0\",\"qty\":5}]}\n"
     "rules: only dispatch over edges returned by query_network. qty must be strict int >= 1. "
-    "advance_cycle ticks time; episode ends at step 30. "
-    "good plan: query S0->W0, ship small stock to W0, advance, query W0->R0, ship small stock to R0, advance repeatedly."
+    "advance_cycle ticks time; episode ends only after 30 advance cycles. "
+    "good plan: query S0->W0, ship small stock to W0, advance, query W0->R0, ship small stock to R0, "
+    "then continue valid dispatches and advance_cycle until the 30-step episode finishes."
 )
 
 
@@ -453,8 +454,9 @@ def _build_dataset():
             {
                 "role": "user",
                 "content": (
-                    "return 8-20 json lines only. start with query_network S0 W0, then dispatch S0 W0, "
-                    "then advance_cycle, then use W0 R0 actions. no prose."
+                    "return 35-45 json lines only. start with query_network S0 W0, then dispatch S0 W0, "
+                    "then advance_cycle, then query W0 R0 and dispatch W0 R0. include enough advance_cycle "
+                    "actions to finish the 30-step episode. no prose."
                 ),
             },
         ]
@@ -634,6 +636,18 @@ def _write_training_artifacts(trainer: Any, out_dir: str, train_output: Any = No
     print(f"wrote training artifacts to {out_dir}: {json_path}, {csv_path}, {summary_path}")
 
 
+def _sync_trackio_space() -> None:
+    if not TRACKIO_SPACE:
+        return
+    try:
+        import trackio
+
+        trackio.sync(project=TRACKIO_PROJECT, space_id=TRACKIO_SPACE, sdk="gradio")
+        print(f"refreshed trackio dashboard at https://huggingface.co/spaces/{TRACKIO_SPACE}")
+    except Exception as e:
+        print(f"could not sync trackio dashboard: {e}")
+
+
 def main() -> None:
     print("init train")
     _init_trackio()
@@ -762,6 +776,7 @@ def main() -> None:
     final_dir = os.path.join(OUT_DIR, "final")
     trainer.save_model(final_dir)
     _write_training_artifacts(trainer, final_dir, train_output)
+    _sync_trackio_space()
     _push_to_hub(final_dir)
 
 

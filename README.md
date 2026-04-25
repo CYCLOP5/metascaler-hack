@@ -34,7 +34,7 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | github source | https://github.com/CYCLOP5/metascaler-hack |
 | trained lora adapter | https://huggingface.co/AceofStades/dsc-co-grpo-lora (after training run) |
 | final training curve | https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png (uploaded with adapter) |
-| trackio live training dashboard | https://huggingface.co/spaces/AceofStades/dsc-co-trackio (auto-created on first run) |
+| trackio live training dashboard | https://huggingface.co/spaces/AceofStades/dsc-co-trackio (separate dashboard Space in `trackio_space/`) |
 | blog post | [BLOG.md](BLOG.md) |
 | 2-minute demo script | [stufftodo/VIDEO.md](stufftodo/VIDEO.md) |
 
@@ -46,6 +46,7 @@ start here, then jump into whichever judge track matters most:
 |---|---|
 | [BLOG.md](BLOG.md) | submission narrative: problem, verifier, training loop, proof |
 | [stufftodo/VIDEO.md](stufftodo/VIDEO.md) | 2-minute demo script and asset checklist |
+| [trackio_space/README.md](trackio_space/README.md) | live Trackio dashboard Space for reward/loss monitoring |
 | [docs/architecture.md](docs/architecture.md) | runtime architecture, trainer/env/server data flow |
 | [docs/reward-spec.md](docs/reward-spec.md) | reward components, dense cap, terminal verifier signal |
 | [docs/milp-formulation.md](docs/milp-formulation.md) | exact min-cost-flow MILP solved by CBC |
@@ -153,11 +154,13 @@ final HF Space run preset:
 DSC_MAX_STEPS=1000
 DSC_DATA_N=2000
 DSC_NUM_GEN=8
-DSC_MAX_COMPLETION=512
+DSC_MAX_COMPLETION=1024
 DSC_SAVE_STEPS=100
 DSC_RESUME=1
 DSC_DEBUG=0
 DSC_LOG_COMPLETIONS=0
+DSC_TRACKIO=openenv-dsc-co
+DSC_TRACKIO_SPACE=AceofStades/dsc-co-trackio
 ```
 
 reload the trained adapter anywhere with:
@@ -186,6 +189,7 @@ openenv-dsc-co/
 ├── README.md                 this file (hf space frontmatter at top)
 ├── BLOG.md                   hackathon submission post
 ├── stufftodo/VIDEO.md        2-minute demo script
+├── trackio_space/            gradio Trackio dashboard Space files
 ├── Makefile                  install, serve, test, eval, viz, bench, docker, push-space, train
 ├── Dockerfile                python 3.11-slim + coinor-cbc + non-root, port 7860 (hf space direct)
 ├── requirements.txt          env-only pip deps (mac-safe)

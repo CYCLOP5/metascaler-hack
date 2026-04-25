@@ -75,8 +75,8 @@ dense total capped at 0.4 per episode (strictly less than any terminal reward a 
 trl grpo + unsloth on huggingface spaces:
 
 - model: `unsloth/Llama-3.2-3B-Instruct-bnb-4bit` 4-bit QLoRA, r=32
-- defaults are conservative for HF Spaces: `num_generations=4`, `max_completion_length=512`, `beta=0.04`; final runs can override these with `DSC_`* Space variables
-- final submitted training run uses `DSC_MAX_STEPS=1000`, `DSC_DATA_N=2000`, `DSC_NUM_GEN=8`, `DSC_MAX_COMPLETION=512`, `DSC_SAVE_STEPS=100`, `DSC_RESUME=1`, `DSC_DEBUG=0`, `DSC_LOG_COMPLETIONS=0`
+- defaults are conservative for HF Spaces: `num_generations=4`, `max_completion_length=512`, `beta=0.04`; final runs can override these with `DSC_*` Space variables
+- final submitted training run uses `DSC_MAX_STEPS=1000`, `DSC_DATA_N=2000`, `DSC_NUM_GEN=8`, `DSC_MAX_COMPLETION=1024`, `DSC_SAVE_STEPS=100`, `DSC_RESUME=1`, `DSC_DEBUG=0`, `DSC_LOG_COMPLETIONS=0`
 - `environment_factory=DSCToolEnv` is wired in, and reward functions can locally replay JSON tool actions when a TRL build does not pass environments through
 - three reward functions in parallel: cumulative, per-step, terminal - trl sums them into the group advantage
 - the final adapter upload includes `training_metrics.json`, `training_metrics.csv`, and `training_curve.png` so the reward/loss evidence is preserved outside transient Space logs
@@ -103,7 +103,7 @@ an llm planner starts at a 400% optimality gap because it thinks locally. the en
 - hf space training node: [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)
 - github: [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)
 - trained lora adapter: [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)   (published after the training run)
-- trackio dashboard: [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio)   (auto-created on first `trackio.init`)
+- trackio dashboard: [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio)   (dashboard app lives in `trackio_space/`)
 - 2-minute demo video: [https://youtu.be/TBD](https://youtu.be/TBD)
 
 ## thanks
