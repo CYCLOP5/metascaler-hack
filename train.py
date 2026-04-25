@@ -4,6 +4,7 @@ import json
 import os
 import importlib.util
 import inspect
+import time
 import torch
 if not hasattr(torch, "int1"):
     torch.int1 = torch.int8
@@ -37,6 +38,26 @@ LOG_COMPLETIONS = os.environ.get("DSC_LOG_COMPLETIONS", "0").lower() in {
     "true",
     "yes",
 }
+DEBUG_LOG_PATH = "/Users/cyclops/Desktop/letswin/.cursor/debug-9a31b4.log"
+DEBUG_SESSION_ID = "9a31b4"
+DEBUG_RUN_ID = os.environ.get("DSC_DEBUG_RUN_ID", "baseline")
+
+
+def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    payload = {
+        "sessionId": DEBUG_SESSION_ID,
+        "runId": DEBUG_RUN_ID,
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": int(time.time() * 1000),
+    }
+    try:
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, separators=(",", ":")) + "\n")
+    except Exception:
+        pass
 
 
 SYSTEM_PROMPT = (
@@ -78,6 +99,14 @@ class DSCToolEnv:
         self.done = False
         self._seed = random.randint(0, 2**31 - 1)
         obs = self._env.reset(seed=self._seed, difficulty=DIFFICULTY)
+        # #region agent log
+        _dbg_log(
+            "H2",
+            "train.py:reset",
+            "environment reset",
+            {"difficulty": DIFFICULTY, "seed": self._seed},
+        )
+        # #endregion
         return _obs_to_str(obs)
 
     def _run(self, payload: dict) -> str:
@@ -92,6 +121,20 @@ class DSCToolEnv:
             if "terminal" in meta:
                 self.terminal = float(meta.get("terminal", 0.0))
                 self.cumulative += self.terminal
+        # #region agent log
+        _dbg_log(
+            "H2",
+            "train.py:_run",
+            "tool step executed",
+            {
+                "action_kind": payload.get("kind"),
+                "reward": self.reward,
+                "cumulative": self.cumulative,
+                "terminal": self.terminal,
+                "done": self.done,
+            },
+        )
+        # #endregion
         return _obs_to_str(obs)
 
     def query_network(self, source_id: str, dest_id: str) -> str:
@@ -108,8 +151,27 @@ def reward_func(prompts, completions, environments=None, **kwargs) -> List[float
     out = []
     if environments is None:
         return [0.0] * len(prompts)
-    for env in environments:
+    for idx, env in enumerate(environments):
         out.append(float(getattr(env, "cumulative", 0.0)))
+        c = completions[idx] if idx < len(completions) else None
+        c_text = str(c)[:240] if c is not None else ""
+        # #region agent log
+        _dbg_log(
+            "H1",
+            "train.py:reward_func",
+            "reward snapshot from env cumulative",
+            {
+                "sample_idx": idx,
+                "env_cumulative": float(getattr(env, "cumulative", 0.0)),
+                "env_reward": float(getattr(env, "reward", 0.0)),
+                "env_terminal": float(getattr(env, "terminal", 0.0)),
+                "completion_preview": c_text,
+                "looks_like_tool_call": ("dispatch_inventory" in c_text)
+                or ("query_network" in c_text)
+                or ("advance_cycle" in c_text),
+            },
+        )
+        # #endregion
     if out:
         _log_trackio({"reward/mean_cumulative": sum(out) / len(out), "reward/max": max(out)})
     return out
@@ -119,8 +181,20 @@ def schema_reward_func(prompts, completions, environments=None, **kwargs) -> Lis
     out = []
     if environments is None:
         return [0.0] * len(prompts)
-    for env in environments:
+    for idx, env in enumerate(environments):
         out.append(float(getattr(env, "reward", 0.0)))
+        # #region agent log
+        _dbg_log(
+            "H3",
+            "train.py:schema_reward_func",
+            "schema reward snapshot",
+            {
+                "sample_idx": idx,
+                "step_reward": float(getattr(env, "reward", 0.0)),
+                "done": bool(getattr(env, "done", False)),
+            },
+        )
+        # #endregion
     if out:
         _log_trackio({"reward/mean_step": sum(out) / len(out)})
     return out
@@ -130,8 +204,20 @@ def terminal_reward_func(prompts, completions, environments=None, **kwargs) -> L
     out = []
     if environments is None:
         return [0.0] * len(prompts)
-    for env in environments:
+    for idx, env in enumerate(environments):
         out.append(float(getattr(env, "terminal", 0.0)))
+        # #region agent log
+        _dbg_log(
+            "H4",
+            "train.py:terminal_reward_func",
+            "terminal reward snapshot",
+            {
+                "sample_idx": idx,
+                "terminal_reward": float(getattr(env, "terminal", 0.0)),
+                "done": bool(getattr(env, "done", False)),
+            },
+        )
+        # #endregion
     if out:
         _log_trackio({"reward/mean_terminal": sum(out) / len(out)})
     return out
