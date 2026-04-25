@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import importlib.util
+import inspect
 import torch
 if not hasattr(torch, "int1"):
     torch.int1 = torch.int8
@@ -238,7 +239,7 @@ def main() -> None:
 
     dataset = _build_dataset()
 
-    config = GRPOConfig(
+    _config_kwargs = dict(
         output_dir="./grpo_dsc_co",
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
@@ -257,6 +258,9 @@ def main() -> None:
         max_steps=MAX_STEPS if MAX_STEPS > 0 else -1,
         report_to=REPORT_TO,
     )
+    _supported = set(inspect.signature(GRPOConfig.__init__).parameters.keys())
+    _config_kwargs = {k: v for k, v in _config_kwargs.items() if k in _supported}
+    config = GRPOConfig(**_config_kwargs)
 
     print("init grpo")
     trainer = GRPOTrainer(
