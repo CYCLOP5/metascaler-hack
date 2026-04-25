@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 try:
     from .dsc_environment import DSCEnv
@@ -27,10 +28,27 @@ def _build_app():
             from openenv.core.env_server import create_app as _oe_create_app
         from openenv.core.env_server.mcp_types import CallToolAction, CallToolObservation
 
+        class BrowserCallToolAction(CallToolAction):
+            @field_validator("arguments", mode="before")
+            @classmethod
+            def _parse_browser_arguments(cls, value: Any) -> Any:
+                if not isinstance(value, str):
+                    return value
+                text = value.strip()
+                if not text:
+                    return {}
+                try:
+                    parsed = json.loads(text)
+                except json.JSONDecodeError as e:
+                    raise ValueError("arguments must be a JSON object") from e
+                if not isinstance(parsed, dict):
+                    raise ValueError("arguments must be a JSON object")
+                return parsed
+
         print("init oe app")
         return _oe_create_app(
             DSCEnv,
-            CallToolAction,
+            BrowserCallToolAction,
             CallToolObservation,
             env_name="dsc_co",
             max_concurrent_envs=max_concurrent,
