@@ -263,6 +263,10 @@ def main() -> None:
     config = GRPOConfig(**_config_kwargs)
 
     print("init grpo")
+    # Some TRL builds expect this mutable warnings registry on the model.
+    # PEFT wrappers may not expose it, so initialize it explicitly.
+    if not hasattr(model, "warnings_issued"):
+        model.warnings_issued = {}
     trainer = GRPOTrainer(
         model=model,
         processing_class=tokenizer,
