@@ -5,7 +5,7 @@
 ```
 +-------------------+           +------------------+
 |  trl grpo trainer |<--------->|  dsctoolenv x N  |
-|  + unsloth vllm   |           |  (in-process)    |
+|  + unsloth        |           |  (in-process)    |
 +---------+---------+           +---------+--------+
           |                               |
           | rollout prompt                | self._env.step(action)
@@ -28,7 +28,7 @@
 3. `server/solver.py` pulp min-cost flow; cbc solver pinned at `timeLimit=30`
 4. `server/app.py` fastapi app via `openenv.core.env_server.http_server.create_app` using `CallToolAction` / `CallToolObservation` with a manual fallback for `/reset`, `/step`, `/state`, `/mcp`
 5. `models.py` (root) re-export shim of `server.models.*` to satisfy `openenv push` structural check
-6. `train.py` trl + unsloth + llama-3.2-3b-instruct; `environment_factory=DSCToolEnv`
+6. `train.py` trl + unsloth + llama-3.2-3b-instruct; `environment_factory=DSCToolEnv`; local JSON action replay fallback when a TRL build calls reward functions without environments
 
 ## data flow
 

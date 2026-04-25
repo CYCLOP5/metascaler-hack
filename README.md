@@ -33,9 +33,24 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | hf space (training node) | https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training |
 | github source | https://github.com/CYCLOP5/metascaler-hack |
 | trained lora adapter | https://huggingface.co/AceofStades/dsc-co-grpo-lora (after training run) |
+| final training curve | https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png (uploaded with adapter) |
 | trackio live training dashboard | https://huggingface.co/spaces/AceofStades/dsc-co-trackio (auto-created on first run) |
 | blog post | [BLOG.md](BLOG.md) |
 | 2-minute demo script | [stufftodo/VIDEO.md](stufftodo/VIDEO.md) |
+
+## docs index
+
+start here, then jump into whichever judge track matters most:
+
+| doc | what it shows |
+|---|---|
+| [BLOG.md](BLOG.md) | submission narrative: problem, verifier, training loop, proof |
+| [stufftodo/VIDEO.md](stufftodo/VIDEO.md) | 2-minute demo script and asset checklist |
+| [docs/architecture.md](docs/architecture.md) | runtime architecture, trainer/env/server data flow |
+| [docs/reward-spec.md](docs/reward-spec.md) | reward components, dense cap, terminal verifier signal |
+| [docs/milp-formulation.md](docs/milp-formulation.md) | exact min-cost-flow MILP solved by CBC |
+| [docs/curriculum.md](docs/curriculum.md) | four procedural difficulty tiers and reproducibility |
+| [docs/anti-hacking.md](docs/anti-hacking.md) | hard gates against reward/specification hacking |
 
 ## tl;dr
 
@@ -46,7 +61,7 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | horizon | 30 discrete steps |
 | reward | dense shaping (≤ 0.4) + terminal `clip(opt/agent, 0, 1)` |
 | verifier | coin-or cbc milp, zero-variance signal |
-| trainer | trl grpo + unsloth + qwen2.5-coder-7b-instruct |
+| trainer | trl grpo + unsloth + llama-3.2-3b-instruct qlora |
 | curriculum | 4 procedurally-generated tiers with ema gating |
 
 ## why this environment
@@ -124,9 +139,26 @@ workflow:
 
 training stack:
 - `unsloth/Llama-3.2-3B-Instruct-bnb-4bit` 4-bit qlora, r=32
-- `num_generations=8`, `max_completion_length=2048`, `beta=0.04`, `loss_type=bnpo`
-- `use_vllm=True`, `vllm_mode=colocate` (sm ≥ 8.0 detected automatically on l4/a10g)
+- defaults: `num_generations=4`, `max_completion_length=512`, `beta=0.04`; override with `DSC_NUM_GEN`, `DSC_MAX_COMPLETION`, `DSC_BETA`
+- final-run knobs: `DSC_MAX_STEPS`, `DSC_DATA_N`, `DSC_BATCH_SIZE`, `DSC_GRAD_ACCUM`, `DSC_LR`, `DSC_EPOCHS`, `DSC_TEMP`, `DSC_SAVE_STEPS`
+- checkpoint recovery: set `DSC_RESUME=1` to resume the latest checkpoint in `DSC_OUT_DIR`
+- vllm/fast inference is enabled only when the GPU supports it and `vllm` is installed; otherwise training falls back to the standard unsloth path
+- when TRL does not pass environments into reward functions, `train.py` locally replays JSON tool actions through `DSCToolEnv` so rewards, loss, and gradients remain non-zero
+- final model uploads include `training_metrics.json`, `training_metrics.csv`, and `training_curve.png` alongside the LoRA adapter
 - `trackio.log({...})` streams metrics to the trackio dashboard.
+
+final HF Space run preset:
+
+```bash
+DSC_MAX_STEPS=1000
+DSC_DATA_N=2000
+DSC_NUM_GEN=8
+DSC_MAX_COMPLETION=512
+DSC_SAVE_STEPS=100
+DSC_RESUME=1
+DSC_DEBUG=0
+DSC_LOG_COMPLETIONS=0
+```
 
 reload the trained adapter anywhere with:
 
@@ -153,7 +185,7 @@ openenv-dsc-co/
 ├── client.py                 MCPToolClient CLI (tools, loop, query, dispatch, probe, health)
 ├── README.md                 this file (hf space frontmatter at top)
 ├── BLOG.md                   hackathon submission post
-├── VIDEO.md                  2-minute demo script
+├── stufftodo/VIDEO.md        2-minute demo script
 ├── Makefile                  install, serve, test, eval, viz, bench, docker, push-space, train
 ├── Dockerfile                python 3.11-slim + coinor-cbc + non-root, port 7860 (hf space direct)
 ├── requirements.txt          env-only pip deps (mac-safe)
@@ -180,14 +212,14 @@ openenv-dsc-co/
 │   ├── curriculum.md
 │   └── anti-hacking.md
 ├── assets/                   plots (gap_hist.png, terminal_bars.png, ...)
-├── train.py                  trl grpo + unsloth + trackio + qwen2.5-coder-7b
+├── train.py                  trl grpo + unsloth + trackio + llama-3.2-3b
 ├── eval.py                   batch rollout harness -> eval.json
 └── viz.py                    gap histograms, terminal bars, training curves
 ```
 
 ## mcp action space
 
-> 📖 **deep dive:** [[docs/architecture.md]]
+> deep dive: [docs/architecture.md](docs/architecture.md)
 
 | tool | args | semantics |
 |---|---|---|
@@ -215,7 +247,7 @@ max 5 calls per cycle; `advance_cycle` resets the per-cycle counter.
 
 ## reward rubric
 
-> 📖 **deep dive:** [[docs/reward-spec.md]]
+> deep dive: [docs/reward-spec.md](docs/reward-spec.md)
 
 | component | type | value | trigger | cap |
 |---|---|---|---|---|
@@ -227,7 +259,7 @@ max 5 calls per cycle; `advance_cycle` resets the per-cycle counter.
 
 ## curriculum
 
-> 📖 **deep dive:** [[docs/curriculum.md]]
+> deep dive: [docs/curriculum.md](docs/curriculum.md)
 
 | tier | suppliers | warehouses | retail | lead time | demand | disruptions |
 |---|---|---|---|---|---|---|
@@ -238,7 +270,7 @@ max 5 calls per cycle; `advance_cycle` resets the per-cycle counter.
 
 ## milp formulation
 
-> 📖 **deep dive:** [[docs/milp-formulation.md]]
+> deep dive: [docs/milp-formulation.md](docs/milp-formulation.md)
 
 ```
 min   Σ_{e,t} c_e · x[e,t]
@@ -257,7 +289,7 @@ solver: `pulp.PULP_CBC_CMD(msg=0, timeLimit=30)`.
 
 ## anti-hacking hard-gates
 
-> 📖 **deep dive:** [[docs/anti-hacking.md]]
+> deep dive: [docs/anti-hacking.md](docs/anti-hacking.md)
 
 | vector | defense |
 |---|---|
@@ -276,6 +308,14 @@ produces:
 - `eval.json` with per-rollout cost, gap, terminal
 - `assets/gap_hist.png` per-tier gap histograms
 - `assets/terminal_bars.png` mean terminal reward bars by policy × tier
+
+![baseline optimality gap histogram](assets/gap_hist.png)
+
+caption: non-trained baseline policies leave large optimality gaps; `optimal_replay` is the MILP-derived upper-bound behavior.
+
+![baseline terminal reward by policy](assets/terminal_bars.png)
+
+caption: terminal reward has clear headroom for RL; greedy behavior is far below the MILP replay ceiling on tier 1.
 
 baseline numbers on 5 seeds (tier 1 / tier 2):
 
@@ -307,7 +347,7 @@ make test
 | criterion | weight | evidence |
 |---|---|---|
 | environment innovation | 40% | time-expanded graph with milp oracle; 3 hard-gated exploitation vectors; 4-tier procedural curriculum with ema gating |
-| storytelling | 30% | `BLOG.md` + `VIDEO.md` with explicit before/after arc and numbers |
+| storytelling | 30% | `BLOG.md` + `stufftodo/VIDEO.md` with explicit before/after arc and numbers |
 | showing improvement | 20% | `make eval` + `make viz` produces gap histograms; trackio live dashboard hook; near-optimal replay baseline provides ground-truth upper bound |
 | reward and training pipeline | 10% | 43 green tests; composite rubric + anti-hack gates; `train.py` with 3 reward functions + trackio + strict grpo config |
 

@@ -1,7 +1,7 @@
 # openenv-dsc-co: teaching an llm to plan 30 steps ahead under math verification
 
 **theme**: super long-horizon planning + world modeling
-**stack**: openenv + trl grpo + unsloth + pulp cbc + qwen2.5-coder-7b-instruct
+**stack**: openenv + trl grpo + unsloth + pulp cbc + llama-3.2-3b-instruct
 
 ## the gap
 
@@ -13,11 +13,13 @@ existing rl environments either lack a verifier (subjective judge), a curriculum
 
 a multi-echelon supply chain as a time-expanded directed graph. suppliers feed warehouses, warehouses feed retailers. every edge has a lead time, a per-unit cost, and a capacity. retailers consume stochastic demand each step. the agent is a centralized planner and can invoke three mcp tools:
 
-| tool | purpose |
-|---|---|
-| `query_network(src, dst)` | discover edge lead time, unit cost, capacity |
-| `dispatch_inventory(routes=[{src, dst, qty}])` | ship one or more batches this cycle |
-| `advance_cycle()` | tick time, process arrivals, deduct demand, accrue costs |
+
+| tool                                           | purpose                                                  |
+| ---------------------------------------------- | -------------------------------------------------------- |
+| `query_network(src, dst)`                      | discover edge lead time, unit cost, capacity             |
+| `dispatch_inventory(routes=[{src, dst, qty}])` | ship one or more batches this cycle                      |
+| `advance_cycle()`                              | tick time, process arrivals, deduct demand, accrue costs |
+
 
 every request is strict-pydantic validated. `qty` is `conint(strict=True, ge=1)` — the classic "dispatch qty = -99999 to generate infinite virtual inventory" exploit is rejected at parse time.
 
@@ -37,16 +39,18 @@ coin-or cbc solves it. terminal reward is `clip(optimal_cost / agent_cost, 0, 1)
 
 three baselines on 5 seeds per tier:
 
-| tier | policy | mean gap | mean terminal reward |
-|---|---|---|---|
-| 1 | zero-op | 4.48 | 0.19 |
-| 1 | greedy reactive | 1.59 | 0.39 |
-| 1 | **milp replay** | **0.07** | **0.94** |
-| 2 | zero-op | 1.01 | 0.51 |
-| 2 | greedy reactive | 0.35 | 0.75 |
-| 2 | **milp replay** | **0.02** | **0.98** |
 
-![baseline terminal reward](assets/terminal_bars.png)
+| tier | policy          | mean gap | mean terminal reward |
+| ---- | --------------- | -------- | -------------------- |
+| 1    | zero-op         | 4.48     | 0.19                 |
+| 1    | greedy reactive | 1.59     | 0.39                 |
+| 1    | **milp replay** | **0.07** | **0.94**             |
+| 2    | zero-op         | 1.01     | 0.51                 |
+| 2    | greedy reactive | 0.35     | 0.75                 |
+| 2    | **milp replay** | **0.02** | **0.98**             |
+
+
+baseline terminal reward
 
 the gap between greedy (0.39) and optimal (0.94) on tier 1 is the target rl has to close.
 
@@ -54,24 +58,28 @@ the gap between greedy (0.39) and optimal (0.94) on tier 1 is the target rl has 
 
 composite rlvr. dense shaping guides exploration; terminal reward dominates magnitude.
 
-| signal | value | trigger |
-|---|---|---|
-| r_schema | +0.05 | valid mcp parse |
-| r_valid | +0.10 | dispatch with real edge + sufficient inv |
-| r_terminal | `optimal/agent` ∈ [0,1] | step 30 |
-| r_neg_exploit | -1.0 + episode end | qty ≤ 0 or float |
-| r_phantom_edge | 0 + episode end | dispatch over non-adjacency |
+
+| signal         | value                   | trigger                                  |
+| -------------- | ----------------------- | ---------------------------------------- |
+| r_schema       | +0.05                   | valid mcp parse                          |
+| r_valid        | +0.10                   | dispatch with real edge + sufficient inv |
+| r_terminal     | `optimal/agent` ∈ [0,1] | step 30                                  |
+| r_neg_exploit  | -1.0 + episode end      | qty ≤ 0 or float                         |
+| r_phantom_edge | 0 + episode end         | dispatch over non-adjacency              |
+
 
 dense total capped at 0.4 per episode (strictly less than any terminal reward a sensible policy achieves) to block cyclic farming. max 5 tool calls per cycle.
 
 ## the training loop
 
-trl grpo + unsloth + vllm colocate on huggingface spaces:
+trl grpo + unsloth on huggingface spaces:
 
-- model: `unsloth/Qwen2.5-Coder-7B-Instruct` 4-bit QLoRA, r=32
-- `num_generations=8`, `max_completion_length=4096`, `beta=0.04`, `loss_type=bnpo`
-- `environment_factory=DSCToolEnv` spawns one in-process env per rollout; tool methods translate to mcp tool schemas that the policy sees
+- model: `unsloth/Llama-3.2-3B-Instruct-bnb-4bit` 4-bit QLoRA, r=32
+- defaults are conservative for HF Spaces: `num_generations=4`, `max_completion_length=512`, `beta=0.04`; final runs can override these with `DSC_`* Space variables
+- final submitted training run uses `DSC_MAX_STEPS=1000`, `DSC_DATA_N=2000`, `DSC_NUM_GEN=8`, `DSC_MAX_COMPLETION=512`, `DSC_SAVE_STEPS=100`, `DSC_RESUME=1`, `DSC_DEBUG=0`, `DSC_LOG_COMPLETIONS=0`
+- `environment_factory=DSCToolEnv` is wired in, and reward functions can locally replay JSON tool actions when a TRL build does not pass environments through
 - three reward functions in parallel: cumulative, per-step, terminal - trl sums them into the group advantage
+- the final adapter upload includes `training_metrics.json`, `training_metrics.csv`, and `training_curve.png` so the reward/loss evidence is preserved outside transient Space logs
 - trackio hooks log mean rewards live to a public hf space
 
 expected curve: tier-1 terminal reward climbs from ~0.35 (baseline greedy) toward ~0.85 within a few hundred grpo steps. tier-2 from 0.75 toward 0.9+. tier-3 is a stretch goal dependent on wall-clock.
@@ -87,16 +95,16 @@ expected curve: tier-1 terminal reward climbs from ~0.35 (baseline greedy) towar
 
 ## the story arc in one paragraph
 
-an llm planner starts at a 400% optimality gap because it thinks locally. the environment forces it to discover that **early moves have irreversible 5-step downstream consequences**, that **hallucinating edges ends the episode**, and that **loading the dispatch field with `-99999` is detected before state mutation**. trl grpo amplifies the pre-existing qwen2.5-coder priors for json and arithmetic, and the policy gradient pushes probability mass toward sequences that the cbc solver cannot beat. the final metric, optimality gap, is a single float computed by a deterministic algorithm - not a judge.
+an llm planner starts at a 400% optimality gap because it thinks locally. the environment forces it to discover that **early moves have irreversible 5-step downstream consequences**, that **hallucinating edges ends the episode**, and that **loading the dispatch field with `-99999` is detected before state mutation**. trl grpo amplifies the model's json/tool-use priors, and the policy gradient pushes probability mass toward sequences that the cbc solver cannot beat. the final metric, optimality gap, is a single float computed by a deterministic algorithm - not a judge.
 
 ## links
 
-- hf space (env server): https://huggingface.co/spaces/AceofStades/dsc_co
-- hf space training node: https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training
-- github: https://github.com/CYCLOP5/metascaler-hack
-- trained lora adapter: https://huggingface.co/AceofStades/dsc-co-grpo-lora   (published after the training run)
-- trackio dashboard: https://huggingface.co/spaces/AceofStades/dsc-co-trackio   (auto-created on first `trackio.init`)
-- 2-minute demo video: https://youtu.be/TBD
+- hf space (env server): [https://huggingface.co/spaces/AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co)
+- hf space training node: [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)
+- github: [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)
+- trained lora adapter: [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)   (published after the training run)
+- trackio dashboard: [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio)   (auto-created on first `trackio.init`)
+- 2-minute demo video: [https://youtu.be/TBD](https://youtu.be/TBD)
 
 ## thanks
 

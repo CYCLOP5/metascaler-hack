@@ -36,11 +36,11 @@ target: < 120 seconds. 16:9. 30fps. voiceover + screen capture.
 
 ### scene 4  (0:50 - 1:15)  the rl loop
 
-**screen**: overlay of `train.py` -> `GRPOTrainer` ->  `DSCToolEnv` rollouts (8 parallel) -> group-relative advantage formula -> unsloth vllm.
+**screen**: overlay of `train.py` -> `GRPOTrainer` ->  `DSCToolEnv` rollouts -> local JSON action replay fallback -> group-relative advantage formula -> unsloth.
 
-**voiceover**: "we train qwen-2.5-coder-7b with trl grpo, unsloth 4-bit quantization, and vllm-colocated rollouts. eight trajectories per prompt. the group-relative advantage rescales dense shaping and the sparse terminal into a single policy gradient update."
+**voiceover**: "we train llama-3.2-3b-instruct with trl grpo and unsloth 4-bit quantization on huggingface spaces. the model emits json tool actions. if trl does not hand an environment object into the reward function, train.py replays those actions locally through the same dsc environment, so dense shaping and sparse terminal reward still become a real policy-gradient signal."
 
-**caption**: `grpo + unsloth + vllm on huggingface spaces`
+**caption**: `grpo + unsloth + verified local replay on huggingface spaces`
 
 ---
 

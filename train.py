@@ -30,6 +30,12 @@ DATASET_SIZE = int(os.environ.get("DSC_DATA_N", "2000"))
 MAX_STEPS = int(os.environ.get("DSC_MAX_STEPS", "0"))
 MAX_COMPLETION_LENGTH = int(os.environ.get("DSC_MAX_COMPLETION", "512"))
 SAVE_STEPS = int(os.environ.get("DSC_SAVE_STEPS", "200"))
+TRAIN_BATCH_SIZE = int(os.environ.get("DSC_BATCH_SIZE", "1"))
+GRAD_ACCUM = int(os.environ.get("DSC_GRAD_ACCUM", "8"))
+LEARNING_RATE = float(os.environ.get("DSC_LR", "5e-6"))
+BETA = float(os.environ.get("DSC_BETA", "0.04"))
+TEMPERATURE = float(os.environ.get("DSC_TEMP", "0.7"))
+NUM_TRAIN_EPOCHS = float(os.environ.get("DSC_EPOCHS", "1"))
 ENV_URL = os.environ.get("DSC_ENV_URL", "")
 TRACKIO_PROJECT = os.environ.get("DSC_TRACKIO", "openenv-dsc-co")
 TRACKIO_SPACE = os.environ.get("DSC_TRACKIO_SPACE", "")
@@ -37,18 +43,22 @@ REPORT_TO = os.environ.get("DSC_REPORT", "none")
 OUT_DIR = os.environ.get("DSC_OUT_DIR", "./grpo_dsc_co")
 HF_REPO = os.environ.get("DSC_HF_REPO", "")
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
+RESUME_FROM_CHECKPOINT = os.environ.get("DSC_RESUME", "").strip()
 LOG_COMPLETIONS = os.environ.get("DSC_LOG_COMPLETIONS", "0").lower() in {
     "1",
     "true",
     "yes",
 }
-DEBUG_LOG_PATH = "/Users/cyclops/.cursor/debug-logs/debug-84bbde.log"
-DEBUG_LOG_FALLBACK_PATH = "/tmp/debug-9a31b4.log"
-DEBUG_SESSION_ID = "84bbde"
+DEBUG_ENABLED = os.environ.get("DSC_DEBUG", "0").lower() in {"1", "true", "yes"}
+DEBUG_LOG_PATH = os.environ.get("DSC_DEBUG_LOG_PATH", "/tmp/dsc_train_debug.ndjson")
+DEBUG_LOG_FALLBACK_PATH = "/tmp/dsc_train_debug_fallback.ndjson"
+DEBUG_SESSION_ID = os.environ.get("DSC_DEBUG_SESSION_ID", "dsc-train")
 DEBUG_RUN_ID = os.environ.get("DSC_DEBUG_RUN_ID", "baseline")
 
 
 def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    if not DEBUG_ENABLED:
+        return
     payload = {
         "sessionId": DEBUG_SESSION_ID,
         "runId": DEBUG_RUN_ID,
@@ -59,7 +69,9 @@ def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict) -> Non
         "timestamp": int(time.time() * 1000),
     }
     try:
-        os.makedirs(os.path.dirname(DEBUG_LOG_PATH), exist_ok=True)
+        log_dir = os.path.dirname(DEBUG_LOG_PATH)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
         with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(json.dumps(payload, separators=(",", ":")) + "\n")
     except Exception:
@@ -312,10 +324,13 @@ def reward_func(prompts, completions, environments=None, **kwargs) -> List[float
             {"num_prompts": len(prompts), "num_completions": len(completions)},
         )
         # #endregion
-        return [
+        out = [
             float(_score_completion_without_trl_env(c, idx)["cumulative"])
             for idx, c in enumerate(completions)
         ]
+        if out:
+            _log_trackio({"reward/mean_cumulative": sum(out) / len(out), "reward/max": max(out)})
+        return out
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "cumulative", 0.0)))
         c = completions[idx] if idx < len(completions) else None
@@ -362,10 +377,13 @@ def schema_reward_func(prompts, completions, environments=None, **kwargs) -> Lis
             {"num_prompts": len(prompts), "num_completions": len(completions)},
         )
         # #endregion
-        return [
+        out = [
             float(_score_completion_without_trl_env(c, idx)["step_reward"])
             for idx, c in enumerate(completions)
         ]
+        if out:
+            _log_trackio({"reward/mean_step": sum(out) / len(out)})
+        return out
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "reward", 0.0)))
         # #region agent log
@@ -398,10 +416,13 @@ def terminal_reward_func(prompts, completions, environments=None, **kwargs) -> L
             {"num_prompts": len(prompts), "num_completions": len(completions)},
         )
         # #endregion
-        return [
+        out = [
             float(_score_completion_without_trl_env(c, idx)["terminal"])
             for idx, c in enumerate(completions)
         ]
+        if out:
+            _log_trackio({"reward/mean_terminal": sum(out) / len(out)})
+        return out
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "terminal", 0.0)))
         # #region agent log
@@ -509,6 +530,110 @@ def _push_to_hub(folder_path: str) -> None:
     print(f"uploaded adapter to https://huggingface.co/{HF_REPO}")
 
 
+def _resolve_resume_checkpoint() -> Optional[str]:
+    if not RESUME_FROM_CHECKPOINT or RESUME_FROM_CHECKPOINT.lower() in {"0", "false", "no", "off"}:
+        return None
+    if RESUME_FROM_CHECKPOINT.lower() not in {"1", "true", "yes", "latest"}:
+        return RESUME_FROM_CHECKPOINT
+
+    try:
+        from transformers.trainer_utils import get_last_checkpoint
+
+        checkpoint = get_last_checkpoint(OUT_DIR)
+    except Exception:
+        checkpoint = None
+    if checkpoint:
+        print(f"resuming from checkpoint: {checkpoint}")
+        return checkpoint
+    print("DSC_RESUME requested, but no checkpoint was found; starting fresh.")
+    return None
+
+
+def _write_training_artifacts(trainer: Any, out_dir: str, train_output: Any = None) -> None:
+    history = list(getattr(getattr(trainer, "state", None), "log_history", []) or [])
+    train_metrics = getattr(train_output, "metrics", None) or {}
+    if train_metrics:
+        history.append({"step": getattr(getattr(trainer, "state", None), "global_step", len(history)), **train_metrics})
+    if not history and not train_metrics:
+        print("no trainer log history found; writing empty training artifact manifest.")
+
+    os.makedirs(out_dir, exist_ok=True)
+    json_path = os.path.join(out_dir, "training_metrics.json")
+    csv_path = os.path.join(out_dir, "training_metrics.csv")
+    png_path = os.path.join(out_dir, "training_curve.png")
+    summary_path = os.path.join(out_dir, "training_summary.json")
+
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, default=str)
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "model_name": MODEL_NAME,
+                "max_steps": MAX_STEPS,
+                "dataset_size": DATASET_SIZE,
+                "num_generations": NUM_GEN,
+                "max_completion_length": MAX_COMPLETION_LENGTH,
+                "save_steps": SAVE_STEPS,
+                "trackio_project": TRACKIO_PROJECT,
+                "trackio_space": TRACKIO_SPACE,
+                "train_metrics": train_metrics,
+                "num_log_history_rows": len(history),
+            },
+            f,
+            indent=2,
+            default=str,
+        )
+
+    fieldnames = sorted({key for row in history for key in row.keys()})
+    preferred = [k for k in ["step", "epoch", "loss", "reward", "grad_norm", "learning_rate"] if k in fieldnames]
+    fieldnames = preferred + [k for k in fieldnames if k not in preferred]
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        import csv
+
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if fieldnames:
+            writer.writeheader()
+        for row in history:
+            writer.writerow({k: row.get(k, "") for k in fieldnames})
+
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        series = {}
+        for row_idx, row in enumerate(history):
+            step = row.get("step", row_idx)
+            for key, value in row.items():
+                if key == "step" or not isinstance(value, (int, float)):
+                    continue
+                lowered = key.lower()
+                if "reward" in lowered or lowered in {"loss", "grad_norm"}:
+                    series.setdefault(key, []).append((step, float(value)))
+
+        if series:
+            fig, ax = plt.subplots(figsize=(9, 4.8))
+            for key, points in sorted(series.items()):
+                xs = [p[0] for p in points]
+                ys = [p[1] for p in points]
+                ax.plot(xs, ys, linewidth=1.3, label=key)
+            ax.set_xlabel("training step")
+            ax.set_ylabel("metric value")
+            ax.set_title("GRPO training metrics")
+            ax.grid(True, alpha=0.3)
+            ax.legend()
+            fig.tight_layout()
+            fig.savefig(png_path, dpi=140)
+            plt.close(fig)
+        else:
+            print("no numeric reward/loss series found for training curve.")
+    except Exception as e:
+        print(f"could not render training curve: {e}")
+
+    print(f"wrote training artifacts to {out_dir}: {json_path}, {csv_path}, {summary_path}")
+
+
 def main() -> None:
     print("init train")
     _init_trackio()
@@ -574,20 +699,20 @@ def main() -> None:
 
     _config_kwargs = dict(
         output_dir=OUT_DIR,
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=8,
-        learning_rate=5e-6,
+        per_device_train_batch_size=TRAIN_BATCH_SIZE,
+        gradient_accumulation_steps=GRAD_ACCUM,
+        learning_rate=LEARNING_RATE,
         num_generations=NUM_GEN,
         max_completion_length=MAX_COMPLETION_LENGTH,
-        beta=0.04,
-        temperature=0.7,
+        beta=BETA,
+        temperature=TEMPERATURE,
         use_vllm=_use_fast,
         vllm_mode="colocate" if _use_fast else None,
         chat_template_kwargs={"enable_thinking": False},
         log_completions=LOG_COMPLETIONS,
         logging_steps=1,
         save_steps=SAVE_STEPS,
-        num_train_epochs=1,
+        num_train_epochs=NUM_TRAIN_EPOCHS,
         max_steps=MAX_STEPS if MAX_STEPS > 0 else -1,
         report_to=REPORT_TO,
     )
@@ -605,6 +730,8 @@ def main() -> None:
             "data_size": DATASET_SIZE,
             "use_fast": _use_fast,
             "has_vllm": _has_vllm,
+            "debug_enabled": DEBUG_ENABLED,
+            "resume_from_checkpoint": RESUME_FROM_CHECKPOINT,
             "supported_config": _config_kwargs,
         },
     )
@@ -626,10 +753,15 @@ def main() -> None:
     )
 
     print("run train")
-    trainer.train()
+    resume_checkpoint = _resolve_resume_checkpoint()
+    if resume_checkpoint is None:
+        train_output = trainer.train()
+    else:
+        train_output = trainer.train(resume_from_checkpoint=resume_checkpoint)
     print("save lora")
     final_dir = os.path.join(OUT_DIR, "final")
     trainer.save_model(final_dir)
+    _write_training_artifacts(trainer, final_dir, train_output)
     _push_to_hub(final_dir)
 
 
