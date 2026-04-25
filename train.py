@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import torch
+if not hasattr(torch, "int1"):
+    torch.int1 = torch.int8
 import random
 from typing import Any, List, Optional
 
