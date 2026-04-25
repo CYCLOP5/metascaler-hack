@@ -41,9 +41,9 @@ LOG_COMPLETIONS = os.environ.get("DSC_LOG_COMPLETIONS", "0").lower() in {
     "true",
     "yes",
 }
-DEBUG_LOG_PATH = "/Users/cyclops/Desktop/letswin/.cursor/debug-9a31b4.log"
+DEBUG_LOG_PATH = "/Users/cyclops/.cursor/debug-logs/debug-84bbde.log"
 DEBUG_LOG_FALLBACK_PATH = "/tmp/debug-9a31b4.log"
-DEBUG_SESSION_ID = "9a31b4"
+DEBUG_SESSION_ID = "84bbde"
 DEBUG_RUN_ID = os.environ.get("DSC_DEBUG_RUN_ID", "baseline")
 
 
@@ -71,6 +71,22 @@ def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict) -> Non
         print(f"[DBG {hypothesis_id}] {location} :: {message}")
     except Exception:
         pass
+
+
+def _completion_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        parts = []
+        for item in value:
+            if isinstance(item, dict):
+                parts.append(str(item.get("content", item)))
+            else:
+                parts.append(str(item))
+        return "\n".join(parts)
+    if isinstance(value, dict):
+        return str(value.get("content", value))
+    return str(value)
 
 
 SYSTEM_PROMPT = (
@@ -112,19 +128,27 @@ class DSCToolEnv:
         self.done = False
         self._seed = random.randint(0, 2**31 - 1)
         obs = self._env.reset(seed=self._seed, difficulty=DIFFICULTY)
+        obs_text = _obs_to_str(obs)
         # #region agent log
         _dbg_log(
-            "H2",
+            "H1,H2",
             "train.py:reset",
             "environment reset",
-            {"difficulty": DIFFICULTY, "seed": self._seed},
+            {
+                "difficulty": DIFFICULTY,
+                "seed": self._seed,
+                "obs_len": len(obs_text),
+                "obs_preview": obs_text[:500],
+            },
         )
         # #endregion
-        return _obs_to_str(obs)
+        return obs_text
 
     def _run(self, payload: dict) -> str:
         if self.done:
             return json.dumps({"done": True, "reason": "already_done"})
+        before_calls = getattr(self._env, "_calls_this_cycle", None)
+        before_step = getattr(self._env, "_current_step", None)
         obs = self._env.step({"action": payload})
         self.reward = float(obs.reward)
         self.cumulative += self.reward
@@ -136,15 +160,23 @@ class DSCToolEnv:
                 self.cumulative += self.terminal
         # #region agent log
         _dbg_log(
-            "H2",
+            "H2,H4",
             "train.py:_run",
             "tool step executed",
             {
                 "action_kind": payload.get("kind"),
+                "payload": payload,
+                "before_step": before_step,
+                "after_step": getattr(self._env, "_current_step", None),
+                "before_calls_this_cycle": before_calls,
+                "after_calls_this_cycle": getattr(self._env, "_calls_this_cycle", None),
                 "reward": self.reward,
                 "cumulative": self.cumulative,
                 "terminal": self.terminal,
                 "done": self.done,
+                "obs_reward": float(getattr(obs, "reward", 0.0)),
+                "obs_done": bool(getattr(obs, "done", False)),
+                "obs_metadata": getattr(obs, "metadata", {}),
             },
         )
         # #endregion
@@ -163,21 +195,38 @@ class DSCToolEnv:
 def reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
     if environments is None:
+        # #region agent log
+        _dbg_log(
+            "H2",
+            "train.py:reward_func",
+            "reward called without environments",
+            {"num_prompts": len(prompts), "num_completions": len(completions)},
+        )
+        # #endregion
         return [0.0] * len(prompts)
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "cumulative", 0.0)))
         c = completions[idx] if idx < len(completions) else None
-        c_text = str(c)[:240] if c is not None else ""
+        c_full = _completion_text(c) if c is not None else ""
+        c_text = c_full[:700]
         # #region agent log
         _dbg_log(
-            "H1",
+            "H1,H2,H3",
             "train.py:reward_func",
             "reward snapshot from env cumulative",
             {
                 "sample_idx": idx,
+                "num_prompts": len(prompts),
+                "num_completions": len(completions),
+                "num_environments": len(environments),
+                "completion_type": type(c).__name__ if c is not None else "None",
+                "completion_len": len(c_full),
                 "env_cumulative": float(getattr(env, "cumulative", 0.0)),
                 "env_reward": float(getattr(env, "reward", 0.0)),
                 "env_terminal": float(getattr(env, "terminal", 0.0)),
+                "env_done": bool(getattr(env, "done", False)),
+                "env_step": getattr(getattr(env, "_env", None), "_current_step", None),
+                "env_calls_this_cycle": getattr(getattr(env, "_env", None), "_calls_this_cycle", None),
                 "completion_preview": c_text,
                 "looks_like_tool_call": ("dispatch_inventory" in c_text)
                 or ("query_network" in c_text)
@@ -193,6 +242,14 @@ def reward_func(prompts, completions, environments=None, **kwargs) -> List[float
 def schema_reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
     if environments is None:
+        # #region agent log
+        _dbg_log(
+            "H2",
+            "train.py:schema_reward_func",
+            "schema reward called without environments",
+            {"num_prompts": len(prompts), "num_completions": len(completions)},
+        )
+        # #endregion
         return [0.0] * len(prompts)
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "reward", 0.0)))
@@ -204,7 +261,9 @@ def schema_reward_func(prompts, completions, environments=None, **kwargs) -> Lis
             {
                 "sample_idx": idx,
                 "step_reward": float(getattr(env, "reward", 0.0)),
+                "env_cumulative": float(getattr(env, "cumulative", 0.0)),
                 "done": bool(getattr(env, "done", False)),
+                "env_step": getattr(getattr(env, "_env", None), "_current_step", None),
             },
         )
         # #endregion
@@ -216,6 +275,14 @@ def schema_reward_func(prompts, completions, environments=None, **kwargs) -> Lis
 def terminal_reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
     if environments is None:
+        # #region agent log
+        _dbg_log(
+            "H2",
+            "train.py:terminal_reward_func",
+            "terminal reward called without environments",
+            {"num_prompts": len(prompts), "num_completions": len(completions)},
+        )
+        # #endregion
         return [0.0] * len(prompts)
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "terminal", 0.0)))
@@ -227,7 +294,9 @@ def terminal_reward_func(prompts, completions, environments=None, **kwargs) -> L
             {
                 "sample_idx": idx,
                 "terminal_reward": float(getattr(env, "terminal", 0.0)),
+                "env_cumulative": float(getattr(env, "cumulative", 0.0)),
                 "done": bool(getattr(env, "done", False)),
+                "env_step": getattr(getattr(env, "_env", None), "_current_step", None),
             },
         )
         # #endregion
@@ -245,6 +314,19 @@ def _build_dataset():
             {"role": "user", "content": "plan the supply chain. call tools to minimize cost."},
         ]
     ] * DATASET_SIZE
+    # #region agent log
+    _dbg_log(
+        "H1,H3",
+        "train.py:_build_dataset",
+        "dataset built",
+        {
+            "dataset_size": DATASET_SIZE,
+            "max_completion_length": MAX_COMPLETION_LENGTH,
+            "num_generations": NUM_GEN,
+            "prompt_preview": prompts[0],
+        },
+    )
+    # #endregion
     return Dataset.from_dict({"prompt": prompts})
 
 
@@ -387,6 +469,22 @@ def main() -> None:
     )
     _supported = set(inspect.signature(GRPOConfig.__init__).parameters.keys())
     _config_kwargs = {k: v for k, v in _config_kwargs.items() if k in _supported}
+    # #region agent log
+    _dbg_log(
+        "H2,H3",
+        "train.py:main",
+        "grpo config resolved",
+        {
+            "model_name": MODEL_NAME,
+            "max_seq": MAX_SEQ,
+            "max_steps": MAX_STEPS,
+            "data_size": DATASET_SIZE,
+            "use_fast": _use_fast,
+            "has_vllm": _has_vllm,
+            "supported_config": _config_kwargs,
+        },
+    )
+    # #endregion
     config = GRPOConfig(**_config_kwargs)
 
     print("init grpo")
