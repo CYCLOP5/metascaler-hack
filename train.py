@@ -84,8 +84,10 @@ class DSCToolEnv:
         return self._run({"kind": "advance_cycle"})
 
 
-def reward_func(environments, **kwargs) -> List[float]:
+def reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
+    if environments is None:
+        return [0.0] * len(prompts)
     for env in environments:
         out.append(float(getattr(env, "cumulative", 0.0)))
     if out:
@@ -93,8 +95,10 @@ def reward_func(environments, **kwargs) -> List[float]:
     return out
 
 
-def schema_reward_func(environments, **kwargs) -> List[float]:
+def schema_reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
+    if environments is None:
+        return [0.0] * len(prompts)
     for env in environments:
         out.append(float(getattr(env, "reward", 0.0)))
     if out:
@@ -102,8 +106,10 @@ def schema_reward_func(environments, **kwargs) -> List[float]:
     return out
 
 
-def terminal_reward_func(environments, **kwargs) -> List[float]:
+def terminal_reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
+    if environments is None:
+        return [0.0] * len(prompts)
     for env in environments:
         out.append(float(getattr(env, "terminal", 0.0)))
     if out:
