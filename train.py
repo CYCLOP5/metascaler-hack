@@ -23,13 +23,20 @@ MODEL_NAME = os.environ.get("DSC_MODEL", "unsloth/Llama-3.2-3B-Instruct-bnb-4bit
 MAX_SEQ = int(os.environ.get("DSC_MAX_SEQ", "4096"))
 LORA_R = int(os.environ.get("DSC_LORA_R", "32"))
 DIFFICULTY = int(os.environ.get("DSC_TIER", "1"))
-NUM_GEN = int(os.environ.get("DSC_NUM_GEN", "8"))
+NUM_GEN = int(os.environ.get("DSC_NUM_GEN", "4"))
 DATASET_SIZE = int(os.environ.get("DSC_DATA_N", "2000"))
 MAX_STEPS = int(os.environ.get("DSC_MAX_STEPS", "0"))
+MAX_COMPLETION_LENGTH = int(os.environ.get("DSC_MAX_COMPLETION", "512"))
+SAVE_STEPS = int(os.environ.get("DSC_SAVE_STEPS", "200"))
 ENV_URL = os.environ.get("DSC_ENV_URL", "")
 TRACKIO_PROJECT = os.environ.get("DSC_TRACKIO", "openenv-dsc-co")
 TRACKIO_SPACE = os.environ.get("DSC_TRACKIO_SPACE", "")
 REPORT_TO = os.environ.get("DSC_REPORT", "none")
+LOG_COMPLETIONS = os.environ.get("DSC_LOG_COMPLETIONS", "0").lower() in {
+    "1",
+    "true",
+    "yes",
+}
 
 
 SYSTEM_PROMPT = (
@@ -245,15 +252,15 @@ def main() -> None:
         gradient_accumulation_steps=8,
         learning_rate=5e-6,
         num_generations=NUM_GEN,
-        max_completion_length=2048,
+        max_completion_length=MAX_COMPLETION_LENGTH,
         beta=0.04,
         temperature=0.7,
         use_vllm=_use_fast,
         vllm_mode="colocate" if _use_fast else None,
         chat_template_kwargs={"enable_thinking": False},
-        log_completions=True,
+        log_completions=LOG_COMPLETIONS,
         logging_steps=1,
-        save_steps=50,
+        save_steps=SAVE_STEPS,
         num_train_epochs=1,
         max_steps=MAX_STEPS if MAX_STEPS > 0 else -1,
         report_to=REPORT_TO,
