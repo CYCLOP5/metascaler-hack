@@ -207,7 +207,17 @@ def main() -> None:
         _load_kwargs["gpu_memory_utilization"] = 0.55
         _load_kwargs["max_lora_rank"] = LORA_R
 
-    model, tokenizer = FastLanguageModel.from_pretrained(**_load_kwargs)
+    try:
+        model, tokenizer = FastLanguageModel.from_pretrained(**_load_kwargs)
+    except ImportError as e:
+        # Newer transformers may tighten bitsandbytes requirements.
+        # Retry without 4-bit quantization so the run can proceed.
+        if "bitsandbytes" in str(e) and "4-bit quantization" in str(e):
+            print("4-bit quantization unavailable in this runtime; retrying with full precision.")
+            _load_kwargs["load_in_4bit"] = False
+            model, tokenizer = FastLanguageModel.from_pretrained(**_load_kwargs)
+        else:
+            raise
 
     model = FastLanguageModel.get_peft_model(
         model,
