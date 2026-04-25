@@ -5,6 +5,7 @@ import os
 import importlib.util
 import inspect
 import time
+import ast
 import torch
 if not hasattr(torch, "int1"):
     torch.int1 = torch.int8
@@ -89,16 +90,84 @@ def _completion_text(value: Any) -> str:
     return str(value)
 
 
+_REPLAY_CACHE: dict[str, dict] = {}
+
+
+def _json_objects_from_text(text: str) -> List[dict]:
+    decoder = json.JSONDecoder()
+    out: List[dict] = []
+    idx = 0
+    while idx < len(text):
+        start = text.find("{", idx)
+        if start < 0:
+            break
+        try:
+            obj, end = decoder.raw_decode(text[start:])
+            idx = start + max(end, 1)
+        except Exception:
+            idx = start + 1
+            continue
+        if isinstance(obj, dict):
+            out.append(obj)
+    return out
+
+
+def _python_dicts_from_text(text: str) -> List[dict]:
+    out: List[dict] = []
+    for raw in text.splitlines():
+        line = raw.strip().rstrip(",")
+        if not line.startswith("{") or not line.endswith("}"):
+            continue
+        try:
+            obj = ast.literal_eval(line)
+        except Exception:
+            continue
+        if isinstance(obj, dict):
+            out.append(obj)
+    return out
+
+
+def _normalize_action(obj: dict) -> Optional[dict]:
+    kind = obj.get("kind")
+    if kind == "query_network":
+        source_id = obj.get("source_id") or obj.get("src")
+        dest_id = obj.get("dest_id") or obj.get("dst")
+        if isinstance(source_id, str) and isinstance(dest_id, str):
+            return {"kind": "query_network", "source_id": source_id, "dest_id": dest_id}
+    if kind == "dispatch_inventory":
+        routes = obj.get("routes")
+        if isinstance(routes, list):
+            return {"kind": "dispatch_inventory", "routes": routes}
+    if kind == "advance_cycle":
+        return {"kind": "advance_cycle"}
+    return None
+
+
+def _extract_actions(text: str) -> List[dict]:
+    candidates = _json_objects_from_text(text)
+    if not candidates:
+        candidates = _python_dicts_from_text(text)
+    actions: List[dict] = []
+    for obj in candidates:
+        action = _normalize_action(obj)
+        if action is not None:
+            actions.append(action)
+    return actions[:40]
+
+
 SYSTEM_PROMPT = (
     "you are a central supply chain planner over a 30 step horizon. "
-    "you must minimize total operational cost: transit + holding + shortage penalty. "
-    "available mcp tools:\n"
-    "  query_network(source_id, dest_id) -> edge info\n"
-    "  dispatch_inventory(routes=[{src,dst,qty}]) -> ship orders, qty must be positive integer\n"
-    "  advance_cycle() -> tick time, process arrivals, deduct demand\n"
-    "rules: only dispatch over edges returned by query_network. qty must be strict int>=1. "
-    "plan ahead: lead times delay arrivals. stage inventory at warehouses before retail demand spikes. "
-    "advance_cycle ticks time; episode ends at step 30."
+    "output only executable tool actions as json lines. do not write markdown, python, prose, or explanations. "
+    "valid tier-1 node ids are S0 supplier, W0 warehouse, R0 retail. "
+    "available actions:\n"
+    "{\"kind\":\"query_network\",\"source_id\":\"S0\",\"dest_id\":\"W0\"}\n"
+    "{\"kind\":\"dispatch_inventory\",\"routes\":[{\"src\":\"S0\",\"dst\":\"W0\",\"qty\":20}]}\n"
+    "{\"kind\":\"advance_cycle\"}\n"
+    "{\"kind\":\"query_network\",\"source_id\":\"W0\",\"dest_id\":\"R0\"}\n"
+    "{\"kind\":\"dispatch_inventory\",\"routes\":[{\"src\":\"W0\",\"dst\":\"R0\",\"qty\":5}]}\n"
+    "rules: only dispatch over edges returned by query_network. qty must be strict int >= 1. "
+    "advance_cycle ticks time; episode ends at step 30. "
+    "good plan: query S0->W0, ship small stock to W0, advance, query W0->R0, ship small stock to R0, advance repeatedly."
 )
 
 
@@ -192,6 +261,46 @@ class DSCToolEnv:
         return self._run({"kind": "advance_cycle"})
 
 
+def _score_completion_without_trl_env(completion: Any, sample_idx: int) -> dict:
+    text = _completion_text(completion)
+    cache_key = text[:8192]
+    if cache_key in _REPLAY_CACHE:
+        return _REPLAY_CACHE[cache_key]
+
+    actions = _extract_actions(text)
+    env = DSCToolEnv()
+    env.reset()
+    executed = 0
+    last_obs = ""
+    for action in actions:
+        if env.done:
+            break
+        last_obs = env._run(action)
+        executed += 1
+
+    score = {
+        "cumulative": float(env.cumulative),
+        "step_reward": float(env.reward),
+        "terminal": float(env.terminal),
+        "done": bool(env.done),
+        "executed": executed,
+        "parsed": len(actions),
+        "completion_len": len(text),
+        "completion_preview": text[:700],
+        "last_obs_preview": last_obs[:500],
+    }
+    # #region agent log
+    _dbg_log(
+        "H2,H6",
+        "train.py:_score_completion_without_trl_env",
+        "local replay scored completion",
+        {"sample_idx": sample_idx, **score},
+    )
+    # #endregion
+    _REPLAY_CACHE[cache_key] = score
+    return score
+
+
 def reward_func(prompts, completions, environments=None, **kwargs) -> List[float]:
     out = []
     if environments is None:
@@ -203,7 +312,10 @@ def reward_func(prompts, completions, environments=None, **kwargs) -> List[float
             {"num_prompts": len(prompts), "num_completions": len(completions)},
         )
         # #endregion
-        return [0.0] * len(prompts)
+        return [
+            float(_score_completion_without_trl_env(c, idx)["cumulative"])
+            for idx, c in enumerate(completions)
+        ]
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "cumulative", 0.0)))
         c = completions[idx] if idx < len(completions) else None
@@ -250,7 +362,10 @@ def schema_reward_func(prompts, completions, environments=None, **kwargs) -> Lis
             {"num_prompts": len(prompts), "num_completions": len(completions)},
         )
         # #endregion
-        return [0.0] * len(prompts)
+        return [
+            float(_score_completion_without_trl_env(c, idx)["step_reward"])
+            for idx, c in enumerate(completions)
+        ]
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "reward", 0.0)))
         # #region agent log
@@ -283,7 +398,10 @@ def terminal_reward_func(prompts, completions, environments=None, **kwargs) -> L
             {"num_prompts": len(prompts), "num_completions": len(completions)},
         )
         # #endregion
-        return [0.0] * len(prompts)
+        return [
+            float(_score_completion_without_trl_env(c, idx)["terminal"])
+            for idx, c in enumerate(completions)
+        ]
     for idx, env in enumerate(environments):
         out.append(float(getattr(env, "terminal", 0.0)))
         # #region agent log
@@ -311,7 +429,13 @@ def _build_dataset():
     prompts = [
         [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": "plan the supply chain. call tools to minimize cost."},
+            {
+                "role": "user",
+                "content": (
+                    "return 8-20 json lines only. start with query_network S0 W0, then dispatch S0 W0, "
+                    "then advance_cycle, then use W0 R0 actions. no prose."
+                ),
+            },
         ]
     ] * DATASET_SIZE
     # #region agent log
