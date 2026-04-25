@@ -11,10 +11,9 @@ def run_training():
     global training_status
     training_status["status"] = "Training in progress. Check Space Logs for Unsloth output..."
     try:
-        # Run the training script
         process = subprocess.run(
             ["python", "train.py"],
-            capture_output=False, # Let it stream to Space logs
+            capture_output=False,
             text=True
         )
         if process.returncode == 0:
@@ -26,7 +25,6 @@ def run_training():
 
 @app.on_event("startup")
 def startup_event():
-    # Start training in a background thread so FastAPI can bind to 7860 immediately
     thread = threading.Thread(target=run_training)
     thread.daemon = True
     thread.start()

@@ -11,3 +11,8 @@ grpo_dsc_co/
 *.mov
 *.zip
 .DS_Store
+app.py
+Dockerfile
+train.py
+requirements-train.txt
+notebooks/

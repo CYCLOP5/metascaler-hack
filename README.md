@@ -30,9 +30,9 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | artifact | url |
 |---|---|
 | live hf space (env server) | https://huggingface.co/spaces/AceofStades/dsc_co |
-| kaggle training notebook | https://www.kaggle.com/code/cycl0p5/metahack |
+| hf space (training node) | https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training |
 | github source | https://github.com/CYCLOP5/metascaler-hack |
-| trained lora adapter | https://huggingface.co/AceofStades/dsc-co-grpo-lora (after kaggle run) |
+| trained lora adapter | https://huggingface.co/AceofStades/dsc-co-grpo-lora (after training run) |
 | trackio live training dashboard | https://huggingface.co/spaces/AceofStades/dsc-co-trackio (auto-created on first run) |
 | blog post | [BLOG.md](BLOG.md) |
 | 2-minute demo script | [stufftodo/VIDEO.md](stufftodo/VIDEO.md) |
@@ -106,33 +106,27 @@ docker run --rm -p 7860:7860 openenv-dsc-co
 
 the hf space uses port 8000 by default (`openenv.yaml`). the root `Dockerfile` is wired for port 7860 if you deploy directly as a plain docker space.
 
-## training on kaggle
+## training on huggingface spaces
 
-live kaggle notebook: https://www.kaggle.com/code/cycl0p5/metahack
-
-**mac / apple silicon cannot build xformers** (clang rejects `-fopenmp`). the env server runs fine on mac via pip, but grpo needs a cuda linux host. use kaggle t4x2 or p100.
+we use huggingface spaces as on-demand, high-vram gpu compute nodes for grpo training. 
 
 workflow:
-1. open `notebooks/train_kaggle.ipynb` on kaggle (or use the hosted link above)
-2. `settings` → accelerator = `t4 x2` (or `p100`), internet = `on`
-3. add two secrets under `add-ons → secrets`:
+1. create a new space on huggingface (select **L4** or **A10G** 24GB gpu hardware, **Docker** sdk).
+2. configure space secrets:
    - `HF_TOKEN` — a write-scope token from https://huggingface.co/settings/tokens
-   - `DSC_HF_REPO` — `AceofStades/dsc-co-grpo-lora` (the repo the trained lora will be pushed to)
-4. optional: also set `DSC_HF_SPACE=AceofStades/dsc_co` so the notebook clones the live env repo instead of github
-5. `run all`. the notebook:
-   - installs unsloth + trl + vllm + pulp
-   - runs baseline rollouts (zero-op, greedy, milp-replay) to produce a pre-training gap curve
-   - loads qwen2.5-coder-7b 4-bit, trains with grpo for `MAX_STEPS=120` steps by default (~1-2h on t4x2)
-   - saves the lora adapter to `/kaggle/working/grpo_dsc_co/final` and uploads to `DSC_HF_REPO`
-   - runs trained-policy rollouts for the post-training gap
+   - `DSC_HF_REPO` — `AceofStades/dsc-co-grpo-lora` (where the trained lora will be pushed)
+3. push this codebase to the space:
+   ```bash
+   git remote add space https://huggingface.co/spaces/<your-user>/<your-space>
+   git push space master:main
+   ```
+4. the space will build the `Dockerfile`, spin up a lightweight fastapi server (`app.py`) to satisfy the space's port 7860 health check, and kick off `train.py` in the background. check the space logs to watch unsloth run!
 
 training stack:
-- `unsloth/Qwen2.5-Coder-7B-Instruct` 4-bit qlora, r=32
-- `num_generations=8`, `max_completion_length=4096`, `beta=0.04`, `loss_type=bnpo`
-- `use_vllm=True`, `vllm_mode=colocate`
-- `trackio.log({...})` streams `reward/mean_cumulative`, `reward/mean_step`, `reward/mean_terminal` every grpo step to a public hf space that auto-creates on first call (or set `DSC_TRACKIO_SPACE=AceofStades/dsc-co-trackio`)
-
-fall back to `unsloth/Qwen2.5-Coder-3B-Instruct` if t4 vram is tight.
+- `unsloth/Llama-3.2-3B-Instruct-bnb-4bit` 4-bit qlora, r=32
+- `num_generations=8`, `max_completion_length=2048`, `beta=0.04`, `loss_type=bnpo`
+- `use_vllm=True`, `vllm_mode=colocate` (sm ≥ 8.0 detected automatically on l4/a10g)
+- `trackio.log({...})` streams metrics to the trackio dashboard.
 
 reload the trained adapter anywhere with:
 
@@ -177,7 +171,7 @@ openenv-dsc-co/
 │   ├── test_env.py           reset shapes, anti-hack gates, valid flow, horizon termination
 │   └── test_solver.py        milp correctness, tier shapes, bipartite edges
 ├── notebooks/
-│   ├── train_kaggle.ipynb    end-to-end grpo run on kaggle t4x2/p100
+│   ├── train_hf_space.ipynb  end-to-end grpo run on hf spaces
 │   └── demo.ipynb            before/after rollout plots
 ├── docs/
 │   ├── architecture.md
@@ -192,6 +186,8 @@ openenv-dsc-co/
 ```
 
 ## mcp action space
+
+> 📖 **deep dive:** [[docs/architecture.md]]
 
 | tool | args | semantics |
 |---|---|---|
@@ -219,6 +215,8 @@ max 5 calls per cycle; `advance_cycle` resets the per-cycle counter.
 
 ## reward rubric
 
+> 📖 **deep dive:** [[docs/reward-spec.md]]
+
 | component | type | value | trigger | cap |
 |---|---|---|---|---|
 | r_schema | dense | +0.05 | valid pydantic-parsed tool call | sum dense ≤ 0.4 |
@@ -229,6 +227,8 @@ max 5 calls per cycle; `advance_cycle` resets the per-cycle counter.
 
 ## curriculum
 
+> 📖 **deep dive:** [[docs/curriculum.md]]
+
 | tier | suppliers | warehouses | retail | lead time | demand | disruptions |
 |---|---|---|---|---|---|---|
 | 1 | 1 | 1 | 1 | L=1 | static | none |
@@ -237,6 +237,8 @@ max 5 calls per cycle; `advance_cycle` resets the per-cycle counter.
 | 4 | 7 | 14 | 28 | L∈[1..7] | seasonal | severe strikes |
 
 ## milp formulation
+
+> 📖 **deep dive:** [[docs/milp-formulation.md]]
 
 ```
 min   Σ_{e,t} c_e · x[e,t]
@@ -254,6 +256,8 @@ s.t.  I[n, 0]    = I0_n
 solver: `pulp.PULP_CBC_CMD(msg=0, timeLimit=30)`.
 
 ## anti-hacking hard-gates
+
+> 📖 **deep dive:** [[docs/anti-hacking.md]]
 
 | vector | defense |
 |---|---|

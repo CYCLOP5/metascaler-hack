@@ -66,7 +66,7 @@ dense total capped at 0.4 per episode (strictly less than any terminal reward a 
 
 ## the training loop
 
-trl grpo + unsloth + vllm colocate on kaggle t4x2:
+trl grpo + unsloth + vllm colocate on huggingface spaces:
 
 - model: `unsloth/Qwen2.5-Coder-7B-Instruct` 4-bit QLoRA, r=32
 - `num_generations=8`, `max_completion_length=4096`, `beta=0.04`, `loss_type=bnpo`
@@ -92,9 +92,9 @@ an llm planner starts at a 400% optimality gap because it thinks locally. the en
 ## links
 
 - hf space (env server): https://huggingface.co/spaces/AceofStades/dsc_co
-- kaggle training notebook: https://www.kaggle.com/code/cycl0p5/metahack
+- hf space training node: https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training
 - github: https://github.com/CYCLOP5/metascaler-hack
-- trained lora adapter: https://huggingface.co/AceofStades/dsc-co-grpo-lora   (published after the kaggle run)
+- trained lora adapter: https://huggingface.co/AceofStades/dsc-co-grpo-lora   (published after the training run)
 - trackio dashboard: https://huggingface.co/spaces/AceofStades/dsc-co-trackio   (auto-created on first `trackio.init`)
 - 2-minute demo video: https://youtu.be/TBD
 

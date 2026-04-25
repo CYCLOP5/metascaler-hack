@@ -40,7 +40,7 @@ target: < 120 seconds. 16:9. 30fps. voiceover + screen capture.
 
 **voiceover**: "we train qwen-2.5-coder-7b with trl grpo, unsloth 4-bit quantization, and vllm-colocated rollouts. eight trajectories per prompt. the group-relative advantage rescales dense shaping and the sparse terminal into a single policy gradient update."
 
-**caption**: `grpo + unsloth + vllm on kaggle t4x2`
+**caption**: `grpo + unsloth + vllm on huggingface spaces`
 
 ---
 

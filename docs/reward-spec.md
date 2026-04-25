@@ -22,9 +22,10 @@ dense sum is hard-capped at 0.4 which is strictly less than the minimum possible
 
 - dense rewards emit immediately per step; trl grpo advantage within a rollout group naturally rescales them
 - terminal reward emits only at `done == true`; trainer must aggregate `cumulative` + `terminal` (the `DSCToolEnv` class handles this in `train.py`)
-- two reward functions are passed to `GRPOTrainer`:
+- three reward functions are passed to `GRPOTrainer`:
   - `reward_func` returns `env.cumulative` (episode total)
-  - `schema_reward_func` returns `env.reward` (last-step reward) for lower-variance gradient
+  - `schema_reward_func` returns `env.reward` (last-step shaping reward) for lower-variance gradient
+  - `terminal_reward_func` returns `env.terminal` (final gap vs milp)
 
 ## numerical safety
 
