@@ -12,67 +12,48 @@
       --surface-2: #f1f5f9;
       --text: #0f172a;
       --muted: #475569;
-      --faint: #64748b;
       --line: #d9e2ec;
       --blue: #2563eb;
-      --blue-soft: #dbeafe;
       --green: #15803d;
-      --green-soft: #dcfce7;
       --amber: #b45309;
-      --amber-soft: #fef3c7;
       --red: #b91c1c;
-      --red-soft: #fee2e2;
-      --shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 10px 28px rgba(15, 23, 42, 0.08);
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 14px 34px rgba(15, 23, 42, 0.08);
     }
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 34rem),
-        linear-gradient(180deg, #ffffff 0%, var(--bg) 42%);
+      background: linear-gradient(180deg, #ffffff 0%, var(--bg) 42%);
       color: var(--text);
       font-family: Inter, Roboto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .page {
-      width: min(1180px, calc(100% - 48px));
-      margin: 0 auto;
-      padding: 34px 0 56px;
     }
 
     .topbar {
       position: sticky;
       top: 0;
       z-index: 10;
+      background: rgba(248, 250, 252, 0.88);
+      border-bottom: 1px solid var(--line);
       backdrop-filter: blur(14px);
-      background: rgba(248, 250, 252, 0.84);
-      border-bottom: 1px solid rgba(217, 226, 236, 0.8);
+    }
+
+    .topbar-inner,
+    .page {
+      width: min(1180px, calc(100% - 48px));
+      margin: 0 auto;
     }
 
     .topbar-inner {
-      width: min(1180px, calc(100% - 48px));
-      margin: 0 auto;
-      height: 62px;
+      min-height: 62px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 24px;
     }
 
-    .brand {
-      font-weight: 800;
-      letter-spacing: -0.03em;
-    }
-
-    .nav {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
+    .brand { font-weight: 850; letter-spacing: -0.03em; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .nav a {
       color: var(--muted);
       text-decoration: none;
@@ -80,16 +61,16 @@
       padding: 8px 10px;
       border-radius: 999px;
     }
-
     .nav a:hover { background: var(--surface-2); color: var(--text); }
 
+    .page { padding: 34px 0 56px; }
     .hero {
       display: grid;
       grid-template-columns: 1.05fr 0.95fr;
       gap: 28px;
       align-items: center;
-      min-height: calc(100vh - 92px);
-      padding: 34px 0 28px;
+      min-height: calc(100vh - 96px);
+      padding: 28px 0 40px;
     }
 
     h1 {
@@ -99,63 +80,60 @@
       letter-spacing: -0.07em;
     }
 
-    .lede {
-      margin: 22px 0 0;
-      max-width: 650px;
-      color: var(--muted);
-      font-size: 19px;
-      line-height: 1.55;
-    }
+    h2 { margin: 0; font-size: 34px; letter-spacing: -0.04em; }
+    h3 { margin: 0 0 12px; font-size: 18px; letter-spacing: -0.02em; }
+    p { color: var(--muted); line-height: 1.55; }
+    .lede { max-width: 650px; font-size: 19px; margin: 22px 0 0; }
 
     .chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
     .chip {
       border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.76);
       border-radius: 999px;
       padding: 10px 13px;
       color: var(--muted);
       font-size: 13px;
-      font-weight: 650;
+      font-weight: 700;
     }
 
     .card {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
       border: 1px solid var(--line);
       border-radius: 24px;
       box-shadow: var(--shadow);
       overflow: hidden;
     }
 
-    .visual-card { padding: 20px; }
+    .pad { padding: 22px; }
+    .section { padding: 56px 0 18px; }
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+    .section-copy { max-width: 570px; margin: 0; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
     .visual-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 14px;
       color: var(--muted);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 750;
+      margin-bottom: 14px;
     }
 
     .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
       color: var(--green);
-      background: var(--green-soft);
+      background: #dcfce7;
       border-radius: 999px;
       padding: 7px 10px;
     }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: blink 1.8s ease-in-out infinite;
-    }
-
-    @keyframes blink { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 
     svg.network {
       width: 100%;
@@ -167,7 +145,7 @@
     }
 
     .edge { stroke: #94a3b8; stroke-width: 6; stroke-linecap: round; fill: none; }
-    .edge.active { stroke: var(--blue); stroke-dasharray: 12 14; animation: dash 1.5s linear infinite; opacity: 0.9; }
+    .edge.active { stroke: var(--blue); stroke-dasharray: 12 14; animation: dash 1.5s linear infinite; }
     @keyframes dash { to { stroke-dashoffset: -26; } }
 
     .node circle { fill: #ffffff; stroke: #cbd5e1; stroke-width: 3; }
@@ -175,7 +153,7 @@
     .node.warehouse circle { stroke: var(--amber); }
     .node.retail circle { stroke: var(--green); }
     .node text { text-anchor: middle; fill: var(--text); font-size: 21px; font-weight: 850; }
-    .node .type { fill: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .node .type { fill: var(--muted); font-size: 12px; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; }
 
     .packet { offset-path: path("M 120 238 C 250 95, 420 95, 545 238"); animation: moveA 4.6s linear infinite; }
     .packet.two { offset-path: path("M 545 238 C 675 380, 850 380, 980 238"); animation: moveB 4.6s linear infinite; animation-delay: 1.25s; }
@@ -197,24 +175,22 @@
       100% { offset-distance: 100%; opacity: 0; }
     }
 
-    .section { padding: 54px 0 20px; }
-    .section-title {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 20px;
-    }
-    h2 { margin: 0; font-size: 34px; letter-spacing: -0.04em; }
-    .section-copy { margin: 0; color: var(--muted); max-width: 560px; line-height: 1.55; }
-
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .tier-card { padding: 16px; }
+    .tier-title { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .tier-title strong { font-size: 18px; }
+    .tier-title span { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .mini-graph { width: 100%; height: 150px; margin: 12px 0 8px; }
+    .mini-node { fill: #ffffff; stroke-width: 2.5; }
+    .mini-edge { stroke: #cbd5e1; stroke-width: 1.5; }
+    .supplier { stroke: var(--blue); }
+    .warehouse { stroke: var(--amber); }
+    .retail { stroke: var(--green); }
+    .tier-meta { color: var(--muted); font-size: 12px; line-height: 1.45; }
 
     .metric-card { padding: 22px; }
     .metric-value { font-size: 42px; letter-spacing: -0.06em; font-weight: 900; }
     .metric-label { color: var(--muted); line-height: 1.4; margin-top: 8px; }
-    .metric-note { color: var(--faint); font-size: 12px; margin-top: 14px; }
+    .metric-note { color: #64748b; font-size: 12px; margin-top: 14px; }
 
     .bar-row { display: grid; grid-template-columns: 120px 1fr 58px; gap: 14px; align-items: center; padding: 12px 0; color: var(--muted); }
     .bar-shell { height: 12px; border-radius: 999px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); }
@@ -243,8 +219,8 @@
 
     .footer { padding: 42px 0 20px; color: var(--muted); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
-    @media (max-width: 920px) {
-      .hero, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .hero, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
       .topbar-inner { height: auto; padding: 12px 0; align-items: flex-start; flex-direction: column; }
       svg.network { height: 390px; }
     }
@@ -256,6 +232,7 @@
       <div class="brand">openenv-dsc-co</div>
       <nav class="nav">
         <a href="#environment">Environment</a>
+        <a href="#tiers">Tiers</a>
         <a href="#verifier">Verifier</a>
         <a href="#training">Training</a>
         <a href="#proof">Proof</a>
@@ -267,7 +244,7 @@
     <section class="hero" id="environment">
       <div>
         <h1>Planning through delayed consequences.</h1>
-        <p class="lede">A 30-step supply-chain environment where the agent discovers the graph with MCP tools and is scored by a deterministic MILP oracle, not a language-model judge.</p>
+        <p class="lede">A 30-step supply-chain environment where the agent discovers the graph with MCP tools and is scored by a deterministic MILP oracle.</p>
         <div class="chips">
           <span class="chip">3 MCP tools</span>
           <span class="chip">30-step horizon</span>
@@ -275,21 +252,19 @@
           <span class="chip">GRPO + Unsloth</span>
         </div>
       </div>
-      <div class="card visual-card">
+      <div class="card pad">
         <div class="visual-header">
-          <span>Tier 1 topology</span>
-          <span class="status-pill"><i class="status-dot"></i> live rollout</span>
+          <span>Tier 1 rollout</span>
+          <span class="status-pill">verified terminal reward</span>
         </div>
         <svg class="network" viewBox="0 0 1100 470" role="img" aria-label="animated supply chain network">
           <path class="edge active" d="M 120 238 C 250 95, 420 95, 545 238" />
           <path class="edge active" d="M 545 238 C 675 380, 850 380, 980 238" />
           <text x="300" y="92" fill="#475569" font-size="14" font-weight="700">lead time + capacity + unit cost</text>
           <text x="705" y="392" fill="#475569" font-size="14" font-weight="700">retail demand arrives each cycle</text>
-
           <g class="packet"><rect x="-16" y="-12" width="32" height="24" rx="6" /></g>
           <g class="packet two"><rect x="-16" y="-12" width="32" height="24" rx="6" /></g>
           <g class="packet three"><rect x="-12" y="-9" width="24" height="18" rx="5" /></g>
-
           <g class="node supplier" transform="translate(120,238)"><circle r="72"/><text y="-3">S0</text><text class="type" y="25">supplier</text></g>
           <g class="node warehouse" transform="translate(545,238)"><circle r="72"/><text y="-3">W0</text><text class="type" y="25">warehouse</text></g>
           <g class="node retail" transform="translate(980,238)"><circle r="72"/><text y="-3">R0</text><text class="type" y="25">retail</text></g>
@@ -297,10 +272,64 @@
       </div>
     </section>
 
+    <section class="section" id="tiers">
+      <div class="section-title">
+        <h2>Curriculum tiers.</h2>
+        <p class="section-copy">The same API scales from a single route to dense, disrupted supply-chain graphs. The trainer controls the difficulty; the environment stays deterministic for a given seed.</p>
+      </div>
+      <div class="grid-4">
+        <div class="card tier-card">
+          <div class="tier-title"><strong>Tier 1</strong><span>1 / 1 / 1</span></div>
+          <svg class="mini-graph" viewBox="0 0 240 150">
+            <line class="mini-edge" x1="48" y1="75" x2="120" y2="75"/><line class="mini-edge" x1="120" y1="75" x2="192" y2="75"/>
+            <circle class="mini-node supplier" cx="48" cy="75" r="16"/><circle class="mini-node warehouse" cx="120" cy="75" r="16"/><circle class="mini-node retail" cx="192" cy="75" r="16"/>
+          </svg>
+          <div class="tier-meta">static demand, lead time 1, no disruptions</div>
+        </div>
+        <div class="card tier-card">
+          <div class="tier-title"><strong>Tier 2</strong><span>3 / 5 / 10</span></div>
+          <svg class="mini-graph" viewBox="0 0 240 150">
+            <g stroke="#cbd5e1" stroke-width="1">
+              <path d="M45 35 L120 25 L195 18 M45 75 L120 60 L195 50 M45 115 L120 95 L195 82 M120 125 L195 115 M120 35 L195 135"/>
+            </g>
+            <circle class="mini-node supplier" cx="45" cy="35" r="8"/><circle class="mini-node supplier" cx="45" cy="75" r="8"/><circle class="mini-node supplier" cx="45" cy="115" r="8"/>
+            <circle class="mini-node warehouse" cx="120" cy="25" r="7"/><circle class="mini-node warehouse" cx="120" cy="60" r="7"/><circle class="mini-node warehouse" cx="120" cy="95" r="7"/><circle class="mini-node warehouse" cx="120" cy="125" r="7"/><circle class="mini-node warehouse" cx="120" cy="35" r="7"/>
+            <circle class="mini-node retail" cx="195" cy="18" r="5"/><circle class="mini-node retail" cx="195" cy="34" r="5"/><circle class="mini-node retail" cx="195" cy="50" r="5"/><circle class="mini-node retail" cx="195" cy="66" r="5"/><circle class="mini-node retail" cx="195" cy="82" r="5"/><circle class="mini-node retail" cx="195" cy="98" r="5"/><circle class="mini-node retail" cx="195" cy="114" r="5"/><circle class="mini-node retail" cx="195" cy="130" r="5"/>
+          </svg>
+          <div class="tier-meta">gaussian demand, more routing choices, no disruptions</div>
+        </div>
+        <div class="card tier-card">
+          <div class="tier-title"><strong>Tier 3</strong><span>5 / 10 / 20</span></div>
+          <svg class="mini-graph" viewBox="0 0 240 150">
+            <g stroke="#cbd5e1" stroke-width="0.8">
+              <path d="M40 22 C85 15 120 20 158 18 C180 18 196 20 210 22 M40 52 C85 46 120 52 158 48 C180 48 196 52 210 54 M40 82 C85 74 120 84 158 78 C180 78 196 84 210 86 M40 112 C85 104 120 116 158 108 C180 108 196 116 210 118"/>
+            </g>
+            <g>
+              <circle class="mini-node supplier" cx="40" cy="22" r="6"/><circle class="mini-node supplier" cx="40" cy="52" r="6"/><circle class="mini-node supplier" cx="40" cy="82" r="6"/><circle class="mini-node supplier" cx="40" cy="112" r="6"/>
+              <circle class="mini-node warehouse" cx="120" cy="20" r="5"/><circle class="mini-node warehouse" cx="120" cy="44" r="5"/><circle class="mini-node warehouse" cx="120" cy="68" r="5"/><circle class="mini-node warehouse" cx="120" cy="92" r="5"/><circle class="mini-node warehouse" cx="120" cy="116" r="5"/>
+              <circle class="mini-node retail" cx="210" cy="22" r="4"/><circle class="mini-node retail" cx="210" cy="38" r="4"/><circle class="mini-node retail" cx="210" cy="54" r="4"/><circle class="mini-node retail" cx="210" cy="70" r="4"/><circle class="mini-node retail" cx="210" cy="86" r="4"/><circle class="mini-node retail" cx="210" cy="102" r="4"/><circle class="mini-node retail" cx="210" cy="118" r="4"/><circle class="mini-node retail" cx="210" cy="134" r="4"/>
+            </g>
+          </svg>
+          <div class="tier-meta">lead times 1-5, capacity jitter, 20 retailers</div>
+        </div>
+        <div class="card tier-card">
+          <div class="tier-title"><strong>Tier 4</strong><span>7 / 14 / 28</span></div>
+          <svg class="mini-graph" viewBox="0 0 240 150">
+            <rect x="24" y="18" width="192" height="112" rx="18" fill="#f8fafc" stroke="#d9e2ec"/>
+            <path d="M42 40 C88 20 152 26 202 38 M42 70 C90 54 150 62 202 72 M42 100 C88 122 152 116 202 102" fill="none" stroke="#cbd5e1" stroke-width="1"/>
+            <circle class="mini-node supplier" cx="42" cy="40" r="5"/><circle class="mini-node supplier" cx="42" cy="70" r="5"/><circle class="mini-node supplier" cx="42" cy="100" r="5"/>
+            <circle class="mini-node warehouse" cx="120" cy="36" r="4"/><circle class="mini-node warehouse" cx="120" cy="58" r="4"/><circle class="mini-node warehouse" cx="120" cy="80" r="4"/><circle class="mini-node warehouse" cx="120" cy="102" r="4"/>
+            <circle class="mini-node retail" cx="202" cy="38" r="3.5"/><circle class="mini-node retail" cx="202" cy="54" r="3.5"/><circle class="mini-node retail" cx="202" cy="70" r="3.5"/><circle class="mini-node retail" cx="202" cy="86" r="3.5"/><circle class="mini-node retail" cx="202" cy="102" r="3.5"/><circle class="mini-node retail" cx="202" cy="118" r="3.5"/>
+          </svg>
+          <div class="tier-meta">seasonality, severe strikes, longest lead times</div>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="verifier">
       <div class="section-title">
         <h2>The reward is a verifier.</h2>
-        <p class="section-copy">At step 30, the scenario is solved as a min-cost-flow MILP. The terminal reward is bounded, deterministic, and monotone in policy quality.</p>
+        <p class="section-copy">At step 30, the exact scenario is solved as a min-cost-flow MILP. Terminal reward is bounded, deterministic, and monotone in policy quality.</p>
       </div>
       <div class="grid-2">
         <div class="card code-panel">
@@ -331,7 +360,7 @@ min sum(edge_cost * flow)
         <div class="card metric-card"><div class="metric-value">0.226</div><div class="metric-label">final terminal MILP reward, up from 0.052</div></div>
         <div class="card metric-card"><div class="metric-value">4h51m</div><div class="metric-label">A100 runtime, with metrics exported to CSV/JSON</div></div>
       </div>
-      <div class="card" style="margin-top:18px; overflow:hidden;">
+      <div class="card" style="margin-top:18px;">
         <div class="curve">
           <span style="height:28%"></span><span style="height:34%"></span><span style="height:41%"></span><span style="height:48%"></span>
           <span style="height:55%"></span><span style="height:62%"></span><span style="height:66%"></span><span style="height:70%"></span>
@@ -349,7 +378,7 @@ min sum(edge_cost * flow)
       <div class="grid-3">
         <div class="card metric-card"><div class="metric-value">43</div><div class="metric-label">tests across schemas, environment dynamics, anti-hack gates, and solver correctness</div></div>
         <div class="card metric-card"><div class="metric-value">3</div><div class="metric-label">tools: query network, dispatch inventory, advance cycle</div></div>
-        <div class="card metric-card"><div class="metric-value">0</div><div class="metric-label">language-model judges in the reward path</div></div>
+        <div class="card metric-card"><div class="metric-value">100%</div><div class="metric-label">terminal reward computed by deterministic Pulp/CBC optimization</div></div>
       </div>
     </section>
 

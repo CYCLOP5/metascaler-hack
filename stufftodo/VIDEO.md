@@ -1,34 +1,36 @@
 # 2-minute demo video script
 
-target: < 120 seconds. 16:9. screen recording + voiceover. no custom UI required.
+Target: under 120 seconds. Record in 16:9. Use `stufftodo/demo_animation.html` as the main visual, with short cuts to the live Space, README, Trackio, and the LoRA repo.
 
 ## recording setup
 
-Use browser tabs and local files we already have:
-
-- local animated visual: `stufftodo/demo_animation.html`
-- `README.md` rendered on GitHub or Hugging Face
-- public env Space: https://huggingface.co/spaces/AceofStades/dsc_co
-- Trackio dashboard: https://huggingface.co/spaces/AceofStades/dsc-co-trackio
-- LoRA repo: https://huggingface.co/AceofStades/dsc-co-grpo-lora
-- local plots: `assets/terminal_bars.png`, `assets/gap_hist.png`, `assets/training_curve.png`
-- code snippets: `server/dsc_environment.py`, `server/solver.py`, `train.py`
+- Open `stufftodo/demo_animation.html` locally in a browser.
+- Open the environment Space: https://huggingface.co/spaces/AceofStades/dsc_co
+- Open the Trackio dashboard: https://huggingface.co/spaces/AceofStades/dsc-co-trackio
+- Open the LoRA repo: https://huggingface.co/AceofStades/dsc-co-grpo-lora
+- Open `README.md`, `docs/curriculum.md`, `docs/milp-formulation.md`, and `docs/anti-hacking.md` for quick evidence cuts.
 
 ## shot list
 
-### scene 1  (0:00 - 0:12)  the hook
+### scene 1 (0:00-0:13) hook
 
-**screen**: open `stufftodo/demo_animation.html`. Start on the animated supplier -> warehouse -> retail flow, then cut to the README baseline table showing zero-op/greedy/milp replay gaps.
+**screen**: Start at the top of `stufftodo/demo_animation.html`. Show the animated supplier -> warehouse -> retail flow.
 
-**voiceover**: "This environment trains an LLM to do something it is bad at: plan through delayed consequences. In a 30-step supply chain, greedy behavior leaves a 159 percent gap on tier one; doing nothing is worse."
+**voiceover**: "This is openenv-dsc-co: a 30-step supply-chain planning environment for language agents. The challenge is delayed consequences. Ship too greedily early, and later demand becomes expensive or impossible to satisfy."
 
-**caption**: `30-step planning. MILP-verified reward.`
+**caption**: `30-step planning with tool actions`
 
----
+### scene 2 (0:13-0:28) curriculum and tier diagrams
 
-### scene 2  (0:12 - 0:30)  run the public env
+**screen**: Scroll to `Curriculum tiers`. Pause on tier 1, then pan across tier 2, tier 3, and tier 4.
 
-**screen**: open `AceofStades/dsc_co`. Click `Reset`. Fill the OpenEnv form:
+**voiceover**: "The curriculum scales from a single route to larger networks: tier two has 3 suppliers, 5 warehouses, and 10 retailers; tier three adds longer lead times and jitter; tier four adds seasonality and severe disruptions."
+
+**caption**: `Tier 1 -> Tier 4: same API, harder planning`
+
+### scene 3 (0:28-0:45) live environment
+
+**screen**: Switch to the public Space. Click `Reset`, then show a valid tool call:
 
 ```text
 Type: call_tool
@@ -36,77 +38,86 @@ Tool Name: query_network
 Arguments: {"source_id": "S0", "dest_id": "W0"}
 ```
 
-Then show `dispatch_inventory` and `advance_cycle` examples from README.
+Then briefly show examples for `dispatch_inventory` and `advance_cycle` from the README.
 
-**voiceover**: "The agent sees a typed JSON environment and acts through three tools: query the network, dispatch inventory, and advance the cycle. The graph is partially observable, so it has to ask before it ships."
+**voiceover**: "The agent does not directly edit state. It acts through three typed tools: query the graph, dispatch inventory, and advance the cycle. That makes the policy inspectable and keeps invalid actions easy to catch."
 
 **caption**: `query_network -> dispatch_inventory -> advance_cycle`
 
----
+### scene 4 (0:45-1:05) verifier reward
 
-### scene 3  (0:30 - 0:48)  the verifier
+**screen**: Return to `demo_animation.html` and scroll to `The reward is a verifier`. Then cut to `docs/milp-formulation.md` or `server/solver.py`.
 
-**screen**: `docs/milp-formulation.md` or `server/solver.py`, highlighting the min-cost-flow objective and `pulp.PULP_CBC_CMD`. Briefly cut back to the animated page's metric cards.
-
-**voiceover**: "The reward is not a language-model judge. At step thirty, the exact same scenario is solved as a min-cost-flow MILP with CBC. Terminal reward is optimal cost over agent cost, clamped between zero and one."
+**voiceover**: "The terminal reward is not judged by another language model. At step thirty, the same scenario is solved as a min-cost-flow MILP with CBC. The score is optimal cost over agent cost, clamped from zero to one."
 
 **caption**: `terminal = clip(optimal_cost / agent_cost, 0, 1)`
 
----
+### scene 5 (1:05-1:22) anti-hacking
 
-### scene 4  (0:48 - 1:10)  anti-hacking
+**screen**: Show `docs/anti-hacking.md` or the README anti-hacking section.
 
-**screen**: `docs/anti-hacking.md` or README anti-hacking table. Highlight negative qty, phantom edges, and dense reward cap.
+**voiceover**: "The environment also blocks obvious reward hacks. Negative quantities, float quantities, phantom edges, and malformed tool calls are rejected or terminate with penalties. Dense reward is capped, so loops cannot farm their way past the verifier."
 
-**voiceover**: "The environment is hard to game. Negative or float quantities terminate with a penalty. Phantom edges end the episode. Dense reward is capped, so cyclic reward farming cannot beat the terminal verifier."
+**caption**: `strict schema + invalid-action gates + capped dense reward`
 
-**caption**: `strict tool schema + dense cap + phantom-edge gate`
+### scene 6 (1:22-1:43) training evidence
 
----
+**screen**: Show the `Final GRPO run` section in the animation, then switch to Trackio or `assets/training_curve.png`.
 
-### scene 5  (1:10 - 1:33)  training evidence
-
-**screen**: Trackio dashboard or `assets/training_curve.png`, then LoRA repo file list showing `training_metrics.csv`, `training_metrics.json`, and `training_curve.png`.
-
-**voiceover**: "We trained Llama 3.2 3B with TRL GRPO and Unsloth for 400 steps on Hugging Face Spaces. Combined reward rose from 0.622 to 1.304. Verified terminal reward rose from 0.052 to 0.226, and reward variance stayed non-zero."
+**voiceover**: "The final training run used Llama 3.2 3B with TRL GRPO and Unsloth on Hugging Face Spaces. Over 400 steps, combined reward rose from 0.622 to 1.304, and terminal MILP reward rose from 0.052 to 0.226."
 
 **caption**: `400 GRPO steps: reward 0.622 -> 1.304`
 
----
+### scene 7 (1:43-1:56) artifacts
 
-### scene 6  (1:33 - 1:50)  baseline headroom
+**screen**: Open the LoRA repo and show `training_metrics.csv`, `training_metrics.json`, `training_summary.json`, and `training_curve.png`.
 
-**screen**: show `assets/terminal_bars.png` and `assets/gap_hist.png`.
+**voiceover**: "The adapter, plots, CSV metrics, JSON metrics, and model card are all public, so the run is auditable after the Space finishes."
 
-**voiceover**: "The baselines explain the learning target. Greedy reactive planning is far below the MILP replay ceiling. That gap is the signal this environment exposes."
+**caption**: `public LoRA + raw metrics + training curve`
 
-**caption**: `greedy terminal 0.39 vs MILP replay 0.94 on tier 1`
+### scene 8 (1:56-2:00) close
 
----
+**screen**: End on the README links or the footer of `demo_animation.html`.
 
-### scene 7  (1:50 - 2:00)  close
-
-**screen**: links table in README, ending on the env Space URL and LoRA repo URL.
-
-**voiceover**: "The environment is live on Hugging Face, the adapter and metrics are public, and every reward number is computed by a deterministic verifier."
+**voiceover**: "The Space is live, the training artifacts are public, and the reward path is deterministic."
 
 **caption**: `hf.co/spaces/AceofStades/dsc_co`
 
----
+## exact tool examples for the Space
+
+Use these if the browser form is visible in the recording:
+
+```text
+Type: call_tool
+Tool Name: query_network
+Arguments: {"source_id": "S0", "dest_id": "W0"}
+```
+
+```text
+Type: call_tool
+Tool Name: dispatch_inventory
+Arguments: {"source_id": "S0", "dest_id": "W0", "quantity": 50}
+```
+
+```text
+Type: call_tool
+Tool Name: advance_cycle
+Arguments: {}
+```
 
 ## assets checklist
 
+- [x] `stufftodo/demo_animation.html` - main animated visual with tier diagrams
 - [x] `assets/terminal_bars.png` - baseline terminal rewards
 - [x] `assets/gap_hist.png` - baseline optimality gaps
 - [x] `assets/training_curve.png` - final GRPO reward/loss curve
-- [x] `stufftodo/demo_animation.html` - local animated visual for screen recording
 - [x] public Trackio run - `AceofStades-1777132468`
 - [x] LoRA repo metrics - `training_metrics.csv`, `training_metrics.json`, `training_summary.json`
 - [ ] YouTube URL - add to README and `BLOG.md` after upload
 
-## voiceover tone
+## narration rules
 
-- calm, concrete, and judge-friendly
-- no hype words
-- emphasize: `30 steps`, `MILP verifier`, `reward 0.622 -> 1.304`, `terminal 0.052 -> 0.226`
-
+- Do not say "language-model judge" except to clarify that there is no LLM judge in the reward path.
+- Emphasize `tier 2`, `tier 3`, and `tier 4` visually so the video does not look like a one-node toy.
+- Keep the reward explanation concrete: deterministic MILP verifier, bounded terminal score, public metrics.

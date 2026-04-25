@@ -2,12 +2,14 @@
 
 ## tier table
 
-| tier | suppliers | warehouses | retail | lead times | demand model | disruptions | supplier step cap |
-|------|-----------|------------|--------|------------|--------------|-------------|-------------------|
-| 1 | 1 | 1 | 1 | L = 1 | static int in [3, 8] | none | 200 |
-| 2 | 3 | 5 | 10 | L = 1 | gaussian, mean in [6, 14] | none | 400 |
-| 3 | 5 | 10 | 20 | L in [1, 5] | gaussian, mean in [7, 17] | minor capacity jitter | 600 |
-| 4 | 7 | 14 | 28 | L in [1, 7] | seasonal sin + gaussian noise | severe strikes | 800 |
+
+| tier | suppliers | warehouses | retail | lead times  | demand model                  | disruptions           | supplier step cap |
+| ---- | --------- | ---------- | ------ | ----------- | ----------------------------- | --------------------- | ----------------- |
+| 1    | 1         | 1          | 1      | L = 1       | static int in [3, 8]          | none                  | 200               |
+| 2    | 3         | 5          | 10     | L = 1       | gaussian, mean in [6, 14]     | none                  | 400               |
+| 3    | 5         | 10         | 20     | L in [1, 5] | gaussian, mean in [7, 17]     | minor capacity jitter | 600               |
+| 4    | 7         | 14         | 28     | L in [1, 7] | seasonal sin + gaussian noise | severe strikes        | 800               |
+
 
 ## node specs
 
@@ -35,3 +37,4 @@
 - `reset(seed, difficulty)` is deterministic given `(seed, difficulty)`
 - all randomness flows through `random.Random(seed)` instantiated per reset
 - scenarios are frozen dataclasses; no in-episode mutation of the topology
+
