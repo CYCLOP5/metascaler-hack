@@ -9,7 +9,7 @@ ENV PATH="/home/user/.local/bin:$PATH"
 WORKDIR /app
 
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir "unsloth @ git+https://github.com/unslothai/unsloth.git"
+RUN pip install --no-cache-dir unsloth_zoo "unsloth @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install --no-cache-dir trl peft accelerate bitsandbytes
 RUN pip install --no-cache-dir pulp pydantic fastapi uvicorn[standard] fastmcp gymnasium openenv-core trackio
 
