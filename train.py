@@ -167,7 +167,7 @@ def main() -> None:
         print("no unsloth")
         raise
 
-    PatchFastRL(algorithm="grpo", FastLanguageModel=FastLanguageModel)
+    PatchFastRL("GRPO", FastLanguageModel)
 
     from trl import GRPOConfig, GRPOTrainer
 
@@ -208,7 +208,7 @@ def main() -> None:
         num_generations=NUM_GEN,
         max_completion_length=4096,
         beta=0.04,
-        loss_type="bnpo",
+
         temperature=0.7,
         use_vllm=True,
         vllm_mode="colocate",
