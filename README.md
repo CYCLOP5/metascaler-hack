@@ -1,12 +1,10 @@
 ---
-
-## title: openenv-dsc-co
-emoji: "📦"
+title: openenv-dsc-co
+emoji: 📦
 colorFrom: indigo
 colorTo: red
 sdk: docker
 app_port: 8000
-app_file: app.py
 pinned: true
 license: apache-2.0
 tags:
@@ -21,6 +19,7 @@ tags:
   - mcp
   - milp
 short_description: 30-step supply chain rlvr env with pulp milp oracle
+---
 
 # openenv-dsc-co
 
