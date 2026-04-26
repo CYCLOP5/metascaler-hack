@@ -1,11 +1,11 @@
 ---
-
-## title: openenv-dsc-co
+title: openenv-dsc-co
 emoji: "📦"
 colorFrom: indigo
 colorTo: red
 sdk: docker
 app_port: 7860
+app_file: app.py
 pinned: true
 license: apache-2.0
 tags:
@@ -20,6 +20,7 @@ tags:
   - mcp
   - milp
 short_description: 30-step supply chain rlvr env with pulp milp oracle
+---
 
 # openenv-dsc-co
 
@@ -28,17 +29,17 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 ## links
 
 
-| artifact                        | url                                                                                                                                                                                                |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| live hf space (env server)      | [https://huggingface.co/spaces/AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co)                                                                                               |
-| hf space (training node)        | [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)                                                             |
-| github source                   | [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)                                                                                                           |
-| trained lora adapter            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)                                                                                         |
-| final training curve            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png) (uploaded with adapter)       |
-| final metrics artifacts         | `[results/training_metrics.csv](results/training_metrics.csv)`, `[results/training_metrics.json](results/training_metrics.json)`, `[results/training_summary.json](results/training_summary.json)` |
-| trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                                |
-| blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                                 |
-| 5-minute demo video             | [https://www.youtube.com/watch?v=YvUwxGc8Mzo](https://www.youtube.com/watch?v=YvUwxGc8Mzo)                                                                                                         |
+| artifact                        | url                                                                                                                                                                                          |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| live hf space (env server)      | [https://huggingface.co/spaces/AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co)                                                                                         |
+| hf space (training node)        | [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)                                                       |
+| github source                   | [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)                                                                                                     |
+| trained lora adapter            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)                                                                                   |
+| final training curve            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png) (uploaded with adapter) |
+| final metrics artifacts         | [`results/training_metrics.csv`](results/training_metrics.csv), [`results/training_metrics.json`](results/training_metrics.json), [`results/training_summary.json`](results/training_summary.json) |
+| trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                          |
+| blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                           |
+| 5-minute demo video             | [https://www.youtube.com/watch?v=YvUwxGc8Mzo](https://www.youtube.com/watch?v=YvUwxGc8Mzo)                                                                                                   |
 
 
 ## docs index
@@ -48,7 +49,7 @@ start here, then jump into whichever md interests you most:
 
 | doc                                                  | what it shows                                                 |
 | ---------------------------------------------------- | ------------------------------------------------------------- |
-| [BOOTSTRAP.md](BOOTSTRAP.md)                         | full setup, local eval, Space deploy, and A100 training path  |
+| [BOOTSTRAP.md](BOOTSTRAP.md)                         | full setup, local eval, Space deploy, and A100 training path   |
 | [BLOG.md](BLOG.md)                                   | submission narrative: problem, verifier, training loop, proof |
 | [trackio_space/README.md](trackio_space/README.md)   | live Trackio dashboard Space for reward/loss monitoring       |
 | [docs/architecture.md](docs/architecture.md)         | runtime architecture, trainer/env/server data flow            |
@@ -125,8 +126,7 @@ Equivalent raw action payload:
 
 llms default to step-wise greedy decisions. give a 7b instruct model a 30-step supply chain and early moves permanently truncate the viable solution space. this env measures and trains through that failure mode with a zero-variance, math-optimal reward.
 
-reward path diagram
-
+![reward path diagram](assets/reward_path.svg)
 
 | measurement                        | value                        |
 | ---------------------------------- | ---------------------------- |
@@ -136,36 +136,34 @@ reward path diagram
 | gradient headroom                  | ~0.55 terminal reward points |
 
 
-baseline terminal reward
+![baseline terminal reward](assets/terminal_bars.png)
 
 ## final training results
 
 Final GRPO evidence run: `400` steps, `2,000` prompts, `8` generations per prompt, `max_completion_length=768`, `Llama-3.2-3B-Instruct` 4-bit QLoRA via Unsloth on an A100 Space. Raw artifacts are committed under `results/` and mirrored in the LoRA repo.
 
+| metric | first logged step | final step | best / aggregate |
+|---|---:|---:|---:|
+| combined reward | 0.622 | 1.304 | max 1.365 |
+| cumulative env reward | 0.505 | 0.852 | last-25 mean 0.855 |
+| terminal MILP reward | 0.052 | 0.226 | max 0.241 |
+| reward std | 0.387 | 0.079 | `frac_reward_zero_std=0` at final |
+| GRPO train loss | — | -0.049 | 400-step run |
+| runtime | — | 4h 51m | `0.023` steps/sec |
 
-| metric                | first logged step | final step | best / aggregate                  |
-| --------------------- | ----------------- | ---------- | --------------------------------- |
-| combined reward       | 0.622             | 1.304      | max 1.365                         |
-| cumulative env reward | 0.505             | 0.852      | last-25 mean 0.855                |
-| terminal MILP reward  | 0.052             | 0.226      | max 0.241                         |
-| reward std            | 0.387             | 0.079      | `frac_reward_zero_std=0` at final |
-| GRPO train loss       | —                 | -0.049     | 400-step run                      |
-| runtime               | —                 | 4h 51m     | `0.023` steps/sec                 |
-
-
-final GRPO training curve
+![final GRPO training curve](assets/training_curve.png)
 
 caption: the model moves from sparse/low terminal verifier reward to stable non-zero MILP terminal reward while maintaining non-zero reward variance and gradients. The high completion clipping rate reflects inefficient stopping, but terminal reward remains active because valid parsed actions reach the 30-step verifier.
 
-reward components
+![reward components](assets/reward_components.png)
 
 caption: the final metrics CSV is preserved under `results/`, so this plot is reproducible without relying on transient Space logs or screenshots.
 
-training health
+![training health](assets/training_health.png)
 
 caption: reward variance remains non-zero and KL stays controlled through the final run.
 
-completion diagnostics
+![completion diagnostics](assets/completion_diagnostics.png)
 
 caption: the model often uses the full completion budget, but parsed action sequences still reach terminal verifier scoring.
 
@@ -202,7 +200,7 @@ huggingface-cli login
 openenv push -r AceofStades/dsc_co --exclude .openenvignore
 ```
 
-`-r` (aka `--repo-id`) takes `username/env-name`. `--exclude .openenvignore` is **required** — the cli's default ignore is only `.`*, `__pycache__`, `*.pyc`, so your local `env/` venv would otherwise upload (~400 mb of compiled `.so` + cbc binaries = 500 error from hf).
+`-r` (aka `--repo-id`) takes `username/env-name`. `--exclude .openenvignore` is **required** — the cli's default ignore is only `.*`, `__pycache__`, `*.pyc`, so your local `env/` venv would otherwise upload (~400 mb of compiled `.so` + cbc binaries = 500 error from hf).
 
 optional flags: `--private`, `--base-image ghcr.io/meta-pytorch/openenv-base:latest`, `--hardware cpu-basic`, `--env-var KEY=VAL`, `--secret KEY=VAL`.
 
