@@ -38,7 +38,7 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | final metrics artifacts         | `[results/training_metrics.csv](results/training_metrics.csv)`, `[results/training_metrics.json](results/training_metrics.json)`, `[results/training_summary.json](results/training_summary.json)` |
 | trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                                |
 | blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                                 |
-| 5-minute demo video             | [https://youtu.be/bnp1fBDqrKI](https://youtu.be/bnp1fBDqrKI)                                                                                                                                       |
+| demo video                      | prefer [BLOG.md](BLOG.md) for the full writeup; if you prefer video, [https://youtu.be/bnp1fBDqrKI](https://youtu.be/bnp1fBDqrKI)                                                                  |
 
 
 ## docs index
