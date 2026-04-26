@@ -5,7 +5,7 @@ emoji: "📦"
 colorFrom: indigo
 colorTo: red
 sdk: docker
-app_port: 7860
+app_port: 8000
 app_file: app.py
 pinned: true
 license: apache-2.0
