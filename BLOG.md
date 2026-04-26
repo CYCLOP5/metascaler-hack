@@ -177,7 +177,7 @@ an llm planner starts at a 400% optimality gap because it thinks locally. the en
 - trained lora adapter: [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)   (published after the training run)
 - final training curve: [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png)
 - trackio dashboard: [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio)   (dashboard app lives in `trackio_space/`)
-- 5-minute demo video: [https://www.youtube.com/watch?v=YvUwxGc8Mzo](https://www.youtube.com/watch?v=YvUwxGc8Mzo)
+- 5-minute demo video: [https://youtu.be/bnp1fBDqrKI](https://youtu.be/bnp1fBDqrKI)
 
 ## thanks
 
