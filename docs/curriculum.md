@@ -37,4 +37,3 @@
 - `reset(seed, difficulty)` is deterministic given `(seed, difficulty)`
 - all randomness flows through `random.Random(seed)` instantiated per reset
 - scenarios are frozen dataclasses; no in-episode mutation of the topology
-

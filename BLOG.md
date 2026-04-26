@@ -35,6 +35,8 @@ s.t. I[n, t+1] = I[n, t] + arrivals(n, t) - departures(n, t) - d[n, t] + u[n, t]
 
 coin-or cbc solves it. terminal reward is `clip(optimal_cost / agent_cost, 0, 1)` — bounded, positive, and strictly monotone in policy quality. no lm-as-judge. no subjective scoring.
 
+![reward path diagram](assets/reward_path.svg)
+
 ## the headroom
 
 three baselines on 5 seeds per tier:
@@ -51,6 +53,12 @@ three baselines on 5 seeds per tier:
 
 
 baseline terminal reward
+
+![baseline terminal reward](assets/terminal_bars.png)
+
+baseline optimality gap
+
+![baseline optimality gap](assets/gap_hist.png)
 
 the gap between greedy (0.39) and optimal (0.94) on tier 1 is the target rl has to close.
 
@@ -85,6 +93,18 @@ trl grpo + unsloth on huggingface spaces:
 the completed evidence run lasted 400 GRPO steps over 2,000 prompts. combined reward rose from 0.622 to 1.304, cumulative env reward rose from 0.505 to 0.852, and terminal MILP reward rose from 0.052 to 0.226. the run preserved non-zero reward variance (`frac_reward_zero_std=0` at the final step) and non-zero gradients, and the adapter repo stores the full metrics CSV/JSON plus the final training curve.
 
 ![final GRPO training curve](assets/training_curve.png)
+
+reward components from the same final metrics CSV:
+
+![reward components](assets/reward_components.png)
+
+training health diagnostics:
+
+![training health](assets/training_health.png)
+
+completion diagnostics:
+
+![completion diagnostics](assets/completion_diagnostics.png)
 
 the optimization target remains the greedy-to-milp gap: greedy tier-1 terminal is ~0.39, while milp replay reaches ~0.94.
 

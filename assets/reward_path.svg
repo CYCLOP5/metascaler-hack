@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="440" viewBox="0 0 1100 440" role="img" aria-label="reward path diagram">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .card { fill: #ffffff; stroke: #d9e2ec; stroke-width: 2; }
+      .title { fill: #0f172a; font: 700 24px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .label { fill: #0f172a; font: 700 18px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .small { fill: #475569; font: 14px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .arrow { stroke: #2563eb; stroke-width: 4; fill: none; marker-end: url(#arrowhead); }
+      .green { fill: #dcfce7; stroke: #15803d; }
+      .amber { fill: #fef3c7; stroke: #b45309; }
+      .blue { fill: #dbeafe; stroke: #2563eb; }
+      .red { fill: #fee2e2; stroke: #b91c1c; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1100" height="440" rx="28"/>
+  <text class="title" x="44" y="54">openenv-dsc-co reward path</text>
+  <text class="small" x="44" y="82">deterministic tool environment + bounded dense shaping + terminal MILP verifier</text>
+
+  <rect class="card blue" x="44" y="132" width="190" height="118" rx="18"/>
+  <text class="label" x="72" y="172">llm policy</text>
+  <text class="small" x="72" y="201">emits JSON</text>
+  <text class="small" x="72" y="224">tool actions</text>
+
+  <path class="arrow" d="M246 191 H330"/>
+
+  <rect class="card" x="342" y="116" width="230" height="150" rx="18"/>
+  <text class="label" x="370" y="154">strict tool API</text>
+  <text class="small" x="370" y="184">query_network</text>
+  <text class="small" x="370" y="207">dispatch_inventory</text>
+  <text class="small" x="370" y="230">advance_cycle</text>
+
+  <path class="arrow" d="M584 191 H668"/>
+
+  <rect class="card amber" x="680" y="116" width="190" height="150" rx="18"/>
+  <text class="label" x="708" y="154">30-step env</text>
+  <text class="small" x="708" y="184">inventory</text>
+  <text class="small" x="708" y="207">pipeline</text>
+  <text class="small" x="708" y="230">cost accrual</text>
+
+  <path class="arrow" d="M775 278 V326 H885"/>
+
+  <rect class="card green" x="900" y="286" width="156" height="96" rx="18"/>
+  <text class="label" x="926" y="326">MILP/CBC</text>
+  <text class="small" x="926" y="354">optimal cost</text>
+
+  <path class="arrow" d="M900 334 H612"/>
+
+  <rect class="card" x="342" y="286" width="250" height="96" rx="18"/>
+  <text class="label" x="370" y="326">terminal reward</text>
+  <text class="small" x="370" y="354">clip(optimal / agent, 0, 1)</text>
+
+  <rect class="card red" x="44" y="286" width="190" height="96" rx="18"/>
+  <text class="label" x="72" y="326">anti-hack gates</text>
+  <text class="small" x="72" y="354">invalid actions terminate</text>
+
+  <path class="arrow" d="M342 334 H246"/>
+</svg>
