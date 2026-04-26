@@ -5,6 +5,8 @@
 
 ## the gap
 
+plain english: this is a store-shelf problem. the agent has to keep retailers stocked without wasting all warehouse inventory too early. if it panic-ships everything now, the shelves may look full for a few turns, but later demand arrives when the warehouse is empty and the system pays shortage penalties.
+
 llms trained with next-token objectives default to step-wise greedy policies. give a 7b instruct model a 30-step supply chain to plan and it empties the closest warehouse on turn one, then watches the retailer burn through shortage penalties while the supplier's 5-step replenishment is still in flight. the failure is not knowledge - it is credit assignment under delayed consequence.
 
 existing rl environments either lack a verifier (subjective judge), a curriculum (saturates), or a math-optimal baseline (no ground truth for the reward signal). we build one that has all three.
@@ -61,6 +63,30 @@ baseline optimality gap
 ![baseline optimality gap](assets/gap_hist.png)
 
 the gap between greedy (0.39) and optimal (0.94) on tier 1 is the target rl has to close.
+
+## behavior before and after
+
+the qualitative story is visible in one tier-1 seed-7 replay:
+
+![before and after behavior trace](assets/before_after_trace.svg)
+
+the reactive baseline keeps dispatching large nearby batches:
+
+```json
+{"kind":"dispatch_inventory","routes":[{"src":"W0","dst":"R0","qty":14}]}
+{"kind":"dispatch_inventory","routes":[{"src":"W0","dst":"R0","qty":14},{"src":"S0","dst":"W0","qty":49}]}
+```
+
+the planned replay waits when stock is sufficient, then sends smaller batches timed to demand:
+
+```json
+{"kind":"advance_cycle"}
+{"kind":"advance_cycle"}
+{"kind":"dispatch_inventory","routes":[{"src":"W0","dst":"R0","qty":3}]}
+{"kind":"dispatch_inventory","routes":[{"src":"W0","dst":"R0","qty":6}]}
+```
+
+same environment, same seed: the reactive baseline ends at terminal reward `0.423`; the planned replay reaches `0.959`. the trained LoRA run is measured by the reward curves below and improved terminal MILP reward from `0.052` to `0.226`. raw trained action completions were not preserved because the final run used `DSC_LOG_COMPLETIONS=0`; future exact side-by-side trained samples should run with `DSC_LOG_COMPLETIONS=1`.
 
 ## the rubric
 

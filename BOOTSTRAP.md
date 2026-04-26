@@ -137,6 +137,8 @@ DSC_TRACKIO=openenv-dsc-co
 DSC_TRACKIO_SPACE=AceofStades/dsc-co-trackio
 ```
 
+for future qualitative before/after demos, set `DSC_LOG_COMPLETIONS=1` so the run preserves exact trained JSON action traces. the final submitted run used `DSC_LOG_COMPLETIONS=0`, so its improvement evidence is the metrics CSV/JSON and reward curves.
+
 training stack:
 
 - `unsloth/Llama-3.2-3B-Instruct-bnb-4bit`

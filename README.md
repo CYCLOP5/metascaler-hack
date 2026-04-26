@@ -1,5 +1,6 @@
 ---
-title: openenv-dsc-co
+
+## title: openenv-dsc-co
 emoji: "📦"
 colorFrom: indigo
 colorTo: red
@@ -20,7 +21,6 @@ tags:
   - mcp
   - milp
 short_description: 30-step supply chain rlvr env with pulp milp oracle
----
 
 # openenv-dsc-co
 
@@ -29,17 +29,17 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 ## links
 
 
-| artifact                        | url                                                                                                                                                                                          |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| live hf space (env server)      | [https://huggingface.co/spaces/AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co)                                                                                         |
-| hf space (training node)        | [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)                                                       |
-| github source                   | [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)                                                                                                     |
-| trained lora adapter            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)                                                                                   |
-| final training curve            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png) (uploaded with adapter) |
-| final metrics artifacts         | [`results/training_metrics.csv`](results/training_metrics.csv), [`results/training_metrics.json`](results/training_metrics.json), [`results/training_summary.json`](results/training_summary.json) |
-| trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                          |
-| blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                           |
-| 5-minute demo video             | [https://www.youtube.com/watch?v=YvUwxGc8Mzo](https://www.youtube.com/watch?v=YvUwxGc8Mzo)                                                                                                   |
+| artifact                        | url                                                                                                                                                                                                |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| live hf space (env server)      | [https://huggingface.co/spaces/AceofStades/dsc_co](https://huggingface.co/spaces/AceofStades/dsc_co)                                                                                               |
+| hf space (training node)        | [https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training](https://huggingface.co/spaces/AceofStades/openenv-dsc-co-training)                                                             |
+| github source                   | [https://github.com/CYCLOP5/metascaler-hack](https://github.com/CYCLOP5/metascaler-hack)                                                                                                           |
+| trained lora adapter            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora](https://huggingface.co/AceofStades/dsc-co-grpo-lora)                                                                                         |
+| final training curve            | [https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png](https://huggingface.co/AceofStades/dsc-co-grpo-lora/blob/main/training_curve.png) (uploaded with adapter)       |
+| final metrics artifacts         | `[results/training_metrics.csv](results/training_metrics.csv)`, `[results/training_metrics.json](results/training_metrics.json)`, `[results/training_summary.json](results/training_summary.json)` |
+| trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                                |
+| blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                                 |
+| 5-minute demo video             | [https://www.youtube.com/watch?v=YvUwxGc8Mzo](https://www.youtube.com/watch?v=YvUwxGc8Mzo)                                                                                                         |
 
 
 ## docs index
@@ -47,16 +47,17 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 start here, then jump into whichever md interests you most:
 
 
-| doc                                                  | what it shows                                                 |
-| ---------------------------------------------------- | ------------------------------------------------------------- |
-| [BOOTSTRAP.md](BOOTSTRAP.md)                         | full setup, local eval, Space deploy, and A100 training path   |
-| [BLOG.md](BLOG.md)                                   | submission narrative: problem, verifier, training loop, proof |
-| [trackio_space/README.md](trackio_space/README.md)   | live Trackio dashboard Space for reward/loss monitoring       |
-| [docs/architecture.md](docs/architecture.md)         | runtime architecture, trainer/env/server data flow            |
-| [docs/reward-spec.md](docs/reward-spec.md)           | reward components, dense cap, terminal verifier signal        |
-| [docs/milp-formulation.md](docs/milp-formulation.md) | exact min-cost-flow MILP solved by CBC                        |
-| [docs/curriculum.md](docs/curriculum.md)             | four procedural difficulty tiers and reproducibility          |
-| [docs/anti-hacking.md](docs/anti-hacking.md)         | hard gates against reward/specification hacking               |
+| doc                                                  | what it shows                                                    |
+| ---------------------------------------------------- | ---------------------------------------------------------------- |
+| [BOOTSTRAP.md](BOOTSTRAP.md)                         | full setup, local eval, Space deploy, and A100 training path     |
+| [BLOG.md](BLOG.md)                                   | submission narrative: problem, verifier, training loop, proof    |
+| [trackio_space/README.md](trackio_space/README.md)   | live Trackio dashboard Space for reward/loss monitoring          |
+| [docs/architecture.md](docs/architecture.md)         | runtime architecture, trainer/env/server data flow               |
+| [docs/reward-spec.md](docs/reward-spec.md)           | reward components, dense cap, terminal verifier signal           |
+| [docs/milp-formulation.md](docs/milp-formulation.md) | exact min-cost-flow MILP solved by CBC                           |
+| [docs/curriculum.md](docs/curriculum.md)             | four procedural difficulty tiers and reproducibility             |
+| [docs/behavior-trace.md](docs/behavior-trace.md)     | qualitative before/after behavior trace for non-technical judges |
+| [docs/anti-hacking.md](docs/anti-hacking.md)         | hard gates against reward/specification hacking                  |
 
 
 ## try the public env
@@ -124,9 +125,16 @@ Equivalent raw action payload:
 
 ## why this environment
 
+plain english: this is a store-shelf problem. the planner has to keep retailers stocked without wasting warehouse and supplier inventory too early. a bad planner panic-ships whatever is closest, looks good for a few turns, then runs out later and pays shortage penalties. a better planner sends smaller shipments early enough for lead time and keeps replenishment moving.
+
 llms default to step-wise greedy decisions. give a 7b instruct model a 30-step supply chain and early moves permanently truncate the viable solution space. this env measures and trains through that failure mode with a zero-variance, math-optimal reward.
 
-![reward path diagram](assets/reward_path.svg)
+reward path diagram
+
+before and after behavior trace
+
+caption: concrete tier-1 seed-7 replay. the reactive baseline over-ships early and ends at terminal reward `0.423`; the planned verifier replay sends smaller timed batches and reaches `0.959`. see [docs/behavior-trace.md](docs/behavior-trace.md). the final trained run improved terminal MILP reward from `0.052` to `0.226`; raw trained completions were not preserved because `DSC_LOG_COMPLETIONS=0`.
+
 
 | measurement                        | value                        |
 | ---------------------------------- | ---------------------------- |
@@ -136,34 +144,36 @@ llms default to step-wise greedy decisions. give a 7b instruct model a 30-step s
 | gradient headroom                  | ~0.55 terminal reward points |
 
 
-![baseline terminal reward](assets/terminal_bars.png)
+baseline terminal reward
 
 ## final training results
 
 Final GRPO evidence run: `400` steps, `2,000` prompts, `8` generations per prompt, `max_completion_length=768`, `Llama-3.2-3B-Instruct` 4-bit QLoRA via Unsloth on an A100 Space. Raw artifacts are committed under `results/` and mirrored in the LoRA repo.
 
-| metric | first logged step | final step | best / aggregate |
-|---|---:|---:|---:|
-| combined reward | 0.622 | 1.304 | max 1.365 |
-| cumulative env reward | 0.505 | 0.852 | last-25 mean 0.855 |
-| terminal MILP reward | 0.052 | 0.226 | max 0.241 |
-| reward std | 0.387 | 0.079 | `frac_reward_zero_std=0` at final |
-| GRPO train loss | — | -0.049 | 400-step run |
-| runtime | — | 4h 51m | `0.023` steps/sec |
 
-![final GRPO training curve](assets/training_curve.png)
+| metric                | first logged step | final step | best / aggregate                  |
+| --------------------- | ----------------- | ---------- | --------------------------------- |
+| combined reward       | 0.622             | 1.304      | max 1.365                         |
+| cumulative env reward | 0.505             | 0.852      | last-25 mean 0.855                |
+| terminal MILP reward  | 0.052             | 0.226      | max 0.241                         |
+| reward std            | 0.387             | 0.079      | `frac_reward_zero_std=0` at final |
+| GRPO train loss       | —                 | -0.049     | 400-step run                      |
+| runtime               | —                 | 4h 51m     | `0.023` steps/sec                 |
+
+
+final GRPO training curve
 
 caption: the model moves from sparse/low terminal verifier reward to stable non-zero MILP terminal reward while maintaining non-zero reward variance and gradients. The high completion clipping rate reflects inefficient stopping, but terminal reward remains active because valid parsed actions reach the 30-step verifier.
 
-![reward components](assets/reward_components.png)
+reward components
 
 caption: the final metrics CSV is preserved under `results/`, so this plot is reproducible without relying on transient Space logs or screenshots.
 
-![training health](assets/training_health.png)
+training health
 
 caption: reward variance remains non-zero and KL stays controlled through the final run.
 
-![completion diagnostics](assets/completion_diagnostics.png)
+completion diagnostics
 
 caption: the model often uses the full completion budget, but parsed action sequences still reach terminal verifier scoring.
 
@@ -200,7 +210,7 @@ huggingface-cli login
 openenv push -r AceofStades/dsc_co --exclude .openenvignore
 ```
 
-`-r` (aka `--repo-id`) takes `username/env-name`. `--exclude .openenvignore` is **required** — the cli's default ignore is only `.*`, `__pycache__`, `*.pyc`, so your local `env/` venv would otherwise upload (~400 mb of compiled `.so` + cbc binaries = 500 error from hf).
+`-r` (aka `--repo-id`) takes `username/env-name`. `--exclude .openenvignore` is **required** — the cli's default ignore is only `.`*, `__pycache__`, `*.pyc`, so your local `env/` venv would otherwise upload (~400 mb of compiled `.so` + cbc binaries = 500 error from hf).
 
 optional flags: `--private`, `--base-image ghcr.io/meta-pytorch/openenv-base:latest`, `--hardware cpu-basic`, `--env-var KEY=VAL`, `--secret KEY=VAL`.
 
@@ -240,6 +250,7 @@ training stack:
 - when TRL does not pass environments into reward functions, `train.py` locally replays JSON tool actions through `DSCToolEnv` so rewards, loss, and gradients remain non-zero
 - final model uploads include `training_metrics.json`, `training_metrics.csv`, and `training_curve.png` alongside the LoRA adapter
 - `trackio.log({...})` streams metrics to the trackio dashboard.
+- set `DSC_LOG_COMPLETIONS=1` on future runs to preserve exact trained JSON action traces for side-by-side qualitative demos.
 
 final HF Space evidence run preset:
 
@@ -311,8 +322,10 @@ openenv-dsc-co/
 │   ├── reward-spec.md
 │   ├── milp-formulation.md
 │   ├── curriculum.md
+│   ├── behavior-trace.md
 │   └── anti-hacking.md
 ├── assets/
+│   ├── before_after_trace.svg qualitative reactive vs planned behavior trace
 │   ├── reward_path.svg       reward/verifier flow diagram
 │   ├── completion_diagnostics.png completion length and clipping diagnostics
 │   ├── gap_hist.png          baseline optimality gap histogram

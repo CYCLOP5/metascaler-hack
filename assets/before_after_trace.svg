@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-label="before and after supply chain behavior trace">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .card { fill: #ffffff; stroke: #d9e2ec; stroke-width: 2; }
+      .bad { fill: #fee2e2; stroke: #b91c1c; }
+      .good { fill: #dcfce7; stroke: #15803d; }
+      .title { fill: #0f172a; font: 800 30px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .h { fill: #0f172a; font: 800 22px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .body { fill: #334155; font: 16px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .small { fill: #475569; font: 14px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .code { fill: #0f172a; font: 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .metric { fill: #0f172a; font: 800 26px system-ui, -apple-system, Segoe UI, sans-serif; }
+      .arrow { stroke: #2563eb; stroke-width: 4; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1200" height="620" rx="28"/>
+  <text class="title" x="44" y="58">what improvement looks like in plain language</text>
+  <text class="body" x="44" y="90">bad policy: panic-ship everything now. better policy: time smaller shipments so shelves stay stocked without wasting inventory.</text>
+
+  <rect class="card bad" x="44" y="128" width="520" height="398" rx="24"/>
+  <text class="h" x="76" y="174">before: reactive / greedy rollout</text>
+  <text class="body" x="76" y="206">keeps dumping inventory as soon as it sees demand</text>
+  <text class="code" x="76" y="252">{ "kind": "dispatch_inventory",</text>
+  <text class="code" x="96" y="278">"routes": [{"src":"W0","dst":"R0","qty":14}] }</text>
+  <text class="code" x="76" y="316">{ "kind": "dispatch_inventory",</text>
+  <text class="code" x="96" y="342">"routes": [</text>
+  <text class="code" x="116" y="368">{"src":"W0","dst":"R0","qty":14},</text>
+  <text class="code" x="116" y="394">{"src":"S0","dst":"W0","qty":49}] }</text>
+  <text class="metric" x="76" y="458">terminal reward: 0.423</text>
+  <text class="small" x="76" y="486">agent cost: 2157.6 on tier 1 seed 7</text>
+
+  <path class="arrow" d="M580 326 H620"/>
+
+  <rect class="card good" x="636" y="128" width="520" height="398" rx="24"/>
+  <text class="h" x="668" y="174">after target: planned / verifier replay</text>
+  <text class="body" x="668" y="206">waits, then sends smaller batches aligned to demand</text>
+  <text class="code" x="668" y="252">{ "kind": "advance_cycle" }</text>
+  <text class="code" x="668" y="290">{ "kind": "advance_cycle" }</text>
+  <text class="code" x="668" y="328">{ "kind": "dispatch_inventory",</text>
+  <text class="code" x="688" y="354">"routes": [{"src":"W0","dst":"R0","qty":3}] }</text>
+  <text class="code" x="668" y="392">{ "kind": "dispatch_inventory",</text>
+  <text class="code" x="688" y="418">"routes": [{"src":"W0","dst":"R0","qty":6}] }</text>
+  <text class="metric" x="668" y="458">terminal reward: 0.959</text>
+  <text class="small" x="668" y="486">agent cost: 952.0 on the same tier 1 seed 7</text>
+
+  <rect class="card" x="44" y="548" width="1112" height="42" rx="18"/>
+  <text class="small" x="68" y="574">the trained run is measured quantitatively by reward curves: terminal MILP reward improved from 0.052 to 0.226 over 400 GRPO steps.</text>
+</svg>
