@@ -4,7 +4,7 @@ emoji: 📦
 colorFrom: indigo
 colorTo: red
 sdk: docker
-app_port: 8000
+app_port: 7860
 pinned: true
 license: apache-2.0
 tags:
