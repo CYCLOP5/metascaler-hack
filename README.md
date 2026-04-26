@@ -38,7 +38,7 @@ dynamic supply chain combinatorial orchestration. a meta openenv-compliant rlvr/
 | final metrics artifacts         | [`results/training_metrics.csv`](results/training_metrics.csv), [`results/training_metrics.json`](results/training_metrics.json), [`results/training_summary.json`](results/training_summary.json) |
 | trackio live training dashboard | [https://huggingface.co/spaces/AceofStades/dsc-co-trackio](https://huggingface.co/spaces/AceofStades/dsc-co-trackio) (separate dashboard Space in `trackio_space/`)                          |
 | blog post                       | [BLOG.md](BLOG.md)                                                                                                                                                                           |
-| 2-minute demo script            | [stufftodo/VIDEO.md](stufftodo/VIDEO.md)                                                                                                                                                     |
+| 5-minute demo video             | [https://www.youtube.com/watch?v=YvUwxGc8Mzo](https://www.youtube.com/watch?v=YvUwxGc8Mzo)                                                                                                   |
 
 
 ## docs index
@@ -49,7 +49,6 @@ start here, then jump into whichever md interests you most:
 | doc                                                  | what it shows                                                 |
 | ---------------------------------------------------- | ------------------------------------------------------------- |
 | [BLOG.md](BLOG.md)                                   | submission narrative: problem, verifier, training loop, proof |
-| [stufftodo/VIDEO.md](stufftodo/VIDEO.md)             | 2-minute demo script and asset checklist                      |
 | [trackio_space/README.md](trackio_space/README.md)   | live Trackio dashboard Space for reward/loss monitoring       |
 | [docs/architecture.md](docs/architecture.md)         | runtime architecture, trainer/env/server data flow            |
 | [docs/reward-spec.md](docs/reward-spec.md)           | reward components, dense cap, terminal verifier signal        |
@@ -304,8 +303,7 @@ openenv-dsc-co/
 │   ├── training_metrics.json final LoRA repo metrics export
 │   └── training_summary.json final run summary
 ├── stufftodo/
-│   ├── VIDEO.md              2-minute demo script and recording plan
-│   └── demo_animation.html   local animation page for screen recording
+│   └── demo_animation.html   local animation page used for the demo video
 ├── trackio_space/
 │   ├── README.md             Trackio dashboard Space card/deploy notes
 │   ├── app.py                live Trackio dashboard app
